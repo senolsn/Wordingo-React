@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
 import { supabase } from '../lib/supabaseClient';
-import { Loader2, LogIn, UserPlus, AlertCircle } from 'lucide-react';
+import { Loader2, LogIn, UserPlus, AlertCircle, Languages, Sparkles } from 'lucide-react';
 
 export const Auth: React.FC = () => {
-  const [isLoading, setIsLoading] = useState(false); //Loading spinnerini tuttugumuz degisken.
-  const [isLogin, setIsLogin] = useState(true); //Login mi Register mi onu tuttugumuz degisken.
+  const [isLoading, setIsLoading] = useState(false);
+  const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -33,80 +33,137 @@ export const Auth: React.FC = () => {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-950 p-4">
-      <div className="w-full max-w-md space-y-8 bg-zinc-900 p-8 rounded-xl border border-zinc-800 shadow-2xl">
-        <div className="text-center">
-          <div className="mx-auto h-12 w-12 bg-white rounded-lg flex items-center justify-center text-zinc-950 font-bold text-2xl mb-4">
-            LG
-          </div>
-          <h2 className="text-3xl font-bold tracking-tight text-white">
-            {isLogin ? 'Hoş Geldiniz' : 'Hesap Oluştur'}
-          </h2>
-          <p className="mt-2 text-sm text-zinc-400">
-            {isLogin
-              ? 'Kelime hazinenizi geliştirmeye devam edin.'
-              : 'Ücretsiz üye olun ve öğrenmeye başlayın.'}
-          </p>
-        </div>
+    <div className="full-height-mobile flex flex-col bg-zinc-950 safe-area-inset-top safe-area-inset-bottom">
+      {/* Decorative Background */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[600px] bg-purple-500/5 rounded-full blur-3xl" />
+        <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-blue-500/5 rounded-full blur-3xl" />
+      </div>
 
-        <form className="mt-8 space-y-6" onSubmit={handleAuth}>
-          <div className="space-y-4 rounded-md shadow-sm">
-            <div>
-              <label className="text-sm font-medium text-zinc-300 block mb-1">Email</label>
-              <input
-                type="email"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="w-full bg-zinc-950 border border-zinc-800 rounded-md px-4 py-3 text-white focus:ring-1 focus:ring-white focus:border-white outline-none placeholder:text-zinc-600 transition-all"
-                placeholder="ornek@email.com"
-              />
+      {/* Content */}
+      <div className="flex-1 flex flex-col items-center justify-center px-5 py-8 relative z-10">
+        <div className="w-full max-w-sm">
+          {/* Logo & Header */}
+          <div className="text-center mb-10 animate-slide-down">
+            <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-zinc-800 to-zinc-900 rounded-2xl mb-6 ring-1 ring-zinc-700 shadow-2xl relative">
+              <Languages size={36} className="text-white" />
+              <div className="absolute -bottom-1 -right-1 w-7 h-7 bg-gradient-to-br from-purple-500 to-blue-500 rounded-lg flex items-center justify-center">
+                <Sparkles size={14} className="text-white" />
+              </div>
             </div>
-            <div>
-              <label className="text-sm font-medium text-zinc-300 block mb-1">Şifre</label>
-              <input
-                type="password"
-                required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="w-full bg-zinc-950 border border-zinc-800 rounded-md px-4 py-3 text-white focus:ring-1 focus:ring-white focus:border-white outline-none placeholder:text-zinc-600 transition-all"
-                placeholder="••••••••"
-              />
-            </div>
+            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-white mb-2">
+              {isLogin ? 'Hoş Geldiniz' : 'Hesap Oluştur'}
+            </h1>
+            <p className="text-zinc-400 text-sm sm:text-base">
+              {isLogin
+                ? 'Kelime hazinenizi geliştirmeye devam edin'
+                : 'Ücretsiz üye olun ve öğrenmeye başlayın'}
+            </p>
           </div>
 
-          {error && (
-            <div className="flex items-center gap-2 p-3 text-sm text-red-400 bg-red-900/20 border border-red-900/50 rounded-md">
-              <AlertCircle size={16} />
-              {error}
+          {/* Form Card */}
+          <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 sm:p-8 shadow-2xl animate-slide-up">
+            <form className="space-y-5" onSubmit={handleAuth}>
+              <div>
+                <label className="text-sm font-medium text-zinc-300 block mb-2">Email</label>
+                <input
+                  type="email"
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="mobile-input"
+                  placeholder="ornek@email.com"
+                  autoComplete="email"
+                />
+              </div>
+
+              <div>
+                <label className="text-sm font-medium text-zinc-300 block mb-2">Şifre</label>
+                <input
+                  type="password"
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="mobile-input"
+                  placeholder="••••••••"
+                  autoComplete={isLogin ? 'current-password' : 'new-password'}
+                  minLength={6}
+                />
+              </div>
+
+              {error && (
+                <div className="flex items-start gap-3 p-4 text-sm text-red-400 bg-red-500/10 border border-red-500/30 rounded-xl animate-shake">
+                  <AlertCircle size={18} className="flex-shrink-0 mt-0.5" />
+                  <span>{error}</span>
+                </div>
+              )}
+
+              <button
+                type="submit"
+                disabled={isLoading}
+                className="w-full bg-white text-zinc-950 py-4 rounded-xl font-semibold transition-all active:scale-[0.98] disabled:opacity-70 flex items-center justify-center gap-2 haptic-feedback text-base mt-2"
+              >
+                {isLoading ? (
+                  <Loader2 className="animate-spin h-5 w-5" />
+                ) : isLogin ? (
+                  <>
+                    <LogIn size={18} />
+                    Giriş Yap
+                  </>
+                ) : (
+                  <>
+                    <UserPlus size={18} />
+                    Kayıt Ol
+                  </>
+                )}
+              </button>
+            </form>
+          </div>
+
+          {/* Toggle Mode */}
+          <div className="text-center mt-6 animate-fade-in">
+            <button
+              onClick={() => {
+                setIsLogin(!isLogin);
+                setError(null);
+              }}
+              className="text-sm font-medium text-zinc-400 active:text-white transition-colors py-2 haptic-feedback"
+            >
+              {isLogin
+                ? 'Hesabınız yok mu? Kayıt olun'
+                : 'Zaten hesabınız var mı? Giriş yapın'}
+            </button>
+          </div>
+
+          {/* Features Preview */}
+          <div className="mt-10 grid grid-cols-3 gap-4 animate-fade-in" style={{ animationDelay: '200ms' }}>
+            <div className="text-center">
+              <div className="w-12 h-12 mx-auto bg-zinc-900 border border-zinc-800 rounded-xl flex items-center justify-center mb-2">
+                <span className="text-xl">🤖</span>
+              </div>
+              <p className="text-xs text-zinc-500">AI Destekli</p>
             </div>
-          )}
-
-          <button
-            type="submit"
-            disabled={isLoading}
-            className="group relative flex w-full justify-center rounded-md bg-white px-3 py-3 text-sm font-semibold text-zinc-900 hover:bg-zinc-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white transition-all disabled:opacity-70"
-          >
-            {isLoading ? (
-              <Loader2 className="animate-spin h-5 w-5" />
-            ) : isLogin ? (
-              <span className="flex items-center gap-2"><LogIn size={18} /> Giriş Yap</span>
-            ) : (
-              <span className="flex items-center gap-2"><UserPlus size={18} /> Kayıt Ol</span>
-            )}
-          </button>
-        </form>
-
-        <div className="text-center mt-4">
-          <button
-            onClick={() => setIsLogin(!isLogin)}
-            className="text-sm font-medium text-zinc-400 hover:text-white transition-colors"
-          >
-            {isLogin
-              ? 'Hesabınız yok mu? Kayıt olun.'
-              : 'Zaten hesabınız var mı? Giriş yapın.'}
-          </button>
+            <div className="text-center">
+              <div className="w-12 h-12 mx-auto bg-zinc-900 border border-zinc-800 rounded-xl flex items-center justify-center mb-2">
+                <span className="text-xl">📚</span>
+              </div>
+              <p className="text-xs text-zinc-500">Kelime Grupları</p>
+            </div>
+            <div className="text-center">
+              <div className="w-12 h-12 mx-auto bg-zinc-900 border border-zinc-800 rounded-xl flex items-center justify-center mb-2">
+                <span className="text-xl">🎯</span>
+              </div>
+              <p className="text-xs text-zinc-500">Akıllı Quiz</p>
+            </div>
+          </div>
         </div>
+      </div>
+
+      {/* Footer */}
+      <div className="flex-shrink-0 px-5 pb-6 text-center">
+        <p className="text-xs text-zinc-600">
+          @Codeweh - AI Vocabulary App
+        </p>
       </div>
     </div>
   );
