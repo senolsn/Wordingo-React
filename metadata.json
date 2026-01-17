@@ -1,0 +1,5 @@
+{
+  "name": "@Codeweh - AI Vocabulary Master",
+  "description": "An advanced vocabulary learning application powered by Gemini AI. Create word groups manually, import from Excel, or generate them via AI based on proficiency levels. Features an intelligent quiz mode with AI-generated distractors.",
+  "requestFramePermissions": []
+}

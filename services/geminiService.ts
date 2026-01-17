@@ -1,0 +1,196 @@
+import { GoogleGenAI, Type, Schema } from "@google/genai";
+import { Word, QuizQuestion, QuizDirection } from '../types';
+
+const apiKey = process.env.GEMINI_API_KEY || '';
+const ai = new GoogleGenAI({ apiKey });
+
+// Helper to generate a unique ID
+const generateId = () => Math.random().toString(36).substr(2, 9);
+
+// Helper to capitalize first letter
+const capitalize = (str: string) => {
+  if (!str) return str;
+  return str.charAt(0).toUpperCase() + str.slice(1);
+};
+
+export const generateWordGroup = async (topic: string, level: string, count: number = 10): Promise<Word[]> => {
+  if (!apiKey) throw new Error("API Key is missing");
+
+  const modelId = "gemini-2.5-flash";
+
+  const responseSchema: Schema = {
+    type: Type.ARRAY,
+    items: {
+      type: Type.OBJECT,
+      properties: {
+        en: { type: Type.STRING, description: "The English word or phrase" },
+        tr: { type: Type.STRING, description: "The Turkish translation" },
+      },
+      required: ["en", "tr"],
+    },
+  };
+
+  const prompt = `Generate a list of ${count} English vocabulary words related to the topic "${topic}" suitable for CEFR level "${level}". 
+  Provide the Turkish translation for each. Ensure the words are appropriate for the level.`;
+
+  try {
+    const response = await ai.models.generateContent({
+      model: modelId,
+      contents: prompt,
+      config: {
+        responseMimeType: "application/json",
+        responseSchema: responseSchema,
+        systemInstruction: "You are an expert English language teacher for Turkish students.",
+      },
+    });
+
+    const rawData = response.text;
+    if (!rawData) return [];
+
+    const parsedData = JSON.parse(rawData) as { en: string; tr: string }[];
+
+    return parsedData.map(item => ({
+      id: generateId(),
+      en: item.en,
+      tr: item.tr
+    }));
+
+  } catch (error) {
+    console.error("Error generating word group:", error);
+    throw error;
+  }
+};
+
+/**
+ * Generates quiz questions in bulk to avoid latency during gameplay.
+ * Processes words in batches if necessary, but here we assume a reasonable quiz size (e.g. 10-20 words).
+ * @param words - Words to quiz
+ * @param direction - Quiz direction: 'tr-to-en' (show Turkish, answer English) or 'en-to-tr' (show English, answer Turkish)
+ */
+export const prepareQuizData = async (words: Word[], direction: QuizDirection = 'tr-to-en'): Promise<QuizQuestion[]> => {
+  if (!apiKey) throw new Error("API Key is missing");
+
+  // Limit to 20 words max for a single quiz session to keep generation fast and reliable
+  const selectedWords = words.sort(() => 0.5 - Math.random()).slice(0, 20);
+  const modelId = "gemini-2.5-flash";
+
+  const responseSchema: Schema = {
+    type: Type.ARRAY,
+    items: {
+      type: Type.OBJECT,
+      properties: {
+        targetWordId: { type: Type.STRING },
+        distractors: {
+          type: Type.ARRAY,
+          items: { type: Type.STRING }
+        }
+      },
+      required: ["targetWordId", "distractors"]
+    }
+  };
+
+  // Prepare context based on direction
+  const isEnglishAnswer = direction === 'tr-to-en';
+  const targetLang = isEnglishAnswer ? 'English' : 'Turkish';
+  const showLang = isEnglishAnswer ? 'Turkish' : 'English';
+
+  const wordsListString = selectedWords.map(w =>
+    `ID: ${w.id}, ${showLang}: ${isEnglishAnswer ? w.tr : w.en}, ${targetLang}: ${isEnglishAnswer ? w.en : w.tr}`
+  ).join('\n');
+
+  const prompt = `
+  I need to create a multiple-choice quiz. The user will see a word in ${showLang} and must choose the correct ${targetLang} translation.
+  
+  ${wordsListString}
+
+  For EACH word in the list above:
+  1. Generate 3 distinct ${targetLang} distractors (wrong answers).
+  2. The distractors must be grammatically similar (noun for noun, verb for verb).
+  3. They should be semantically related but definitely NOT the same meaning as the correct ${targetLang} word.
+  4. Return the result linked by the provided ID.
+  `;
+
+  try {
+    const response = await ai.models.generateContent({
+      model: modelId,
+      contents: prompt,
+      config: {
+        responseMimeType: "application/json",
+        responseSchema: responseSchema,
+        temperature: 0.7,
+      },
+    });
+
+    const rawData = response.text;
+    if (!rawData) return fallbackGeneration(selectedWords, direction);
+
+    const parsedData = JSON.parse(rawData) as { targetWordId: string, distractors: string[] }[];
+
+    // Merge AI result with original word objects
+    const quizQuestions: QuizQuestion[] = [];
+
+    parsedData.forEach(item => {
+      const targetWord = selectedWords.find(w => w.id === item.targetWordId);
+      if (targetWord) {
+        // Ensure we have 3 distractors
+        let distractors = item.distractors;
+        while (distractors.length < 3) {
+          distractors.push("Option " + (distractors.length + 1));
+        }
+        distractors = distractors.slice(0, 3);
+
+        // Consistency: Capitalize all options
+        const capitalizedDistractors = distractors.map(d => capitalize(d));
+        // Correct answer is in the target language
+        const correctAnswer = isEnglishAnswer ? targetWord.en : targetWord.tr;
+        const capitalizedCorrect = capitalize(correctAnswer);
+
+        const options = [...capitalizedDistractors, capitalizedCorrect].sort(() => 0.5 - Math.random());
+
+        quizQuestions.push({
+          targetWord,
+          distractors: capitalizedDistractors,
+          correctOption: capitalizedCorrect,
+          options
+        });
+      }
+    });
+
+    return quizQuestions;
+
+  } catch (error) {
+    console.error("Error generating quiz bulk:", error);
+    return fallbackGeneration(selectedWords, direction);
+  }
+};
+
+// Fallback if AI fails completely
+const fallbackGeneration = (words: Word[], direction: QuizDirection): QuizQuestion[] => {
+  const isEnglishAnswer = direction === 'tr-to-en';
+
+  return words.map(target => {
+    // Pick random other words from the same list as distractors (in target language)
+    const otherWords = words.filter(w => w.id !== target.id).map(w => isEnglishAnswer ? w.en : w.tr);
+    const shuffled = otherWords.sort(() => 0.5 - Math.random());
+    let distractors = shuffled.slice(0, 3);
+
+    // Fill if not enough words
+    while (distractors.length < 3) {
+      distractors.push("N/A");
+    }
+
+    // Consistency: Capitalize all options
+    const capitalizedDistractors = distractors.map(d => capitalize(d));
+    const correctAnswer = isEnglishAnswer ? target.en : target.tr;
+    const capitalizedCorrect = capitalize(correctAnswer);
+
+    const options = [...capitalizedDistractors, capitalizedCorrect].sort(() => 0.5 - Math.random());
+
+    return {
+      targetWord: target,
+      distractors: capitalizedDistractors,
+      correctOption: capitalizedCorrect,
+      options
+    };
+  });
+}
