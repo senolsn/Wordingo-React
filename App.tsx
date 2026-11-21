@@ -38,10 +38,13 @@ const App: React.FC = () => {
     if (session?.user) {
       fetchGroups();
     }
-  }, [session]);
+  }, [session?.user?.id]);
 
   const fetchGroups = async () => {
-    setLoadingData(true);
+    // Sadece ilk yüklemede veya liste boşken tam ekran loader göster
+    if (groups.length === 0) {
+      setLoadingData(true);
+    }
     try {
       // Fetch groups AND their related words in one query
       const { data, error } = await supabase
@@ -52,10 +55,12 @@ const App: React.FC = () => {
           description,
           level,
           created_at,
+          perfect_completion_count,
           words (
             id,
             en,
-            tr
+            tr,
+            wrong_count
           )
         `)
         .order('created_at', { ascending: false });
@@ -242,6 +247,32 @@ const App: React.FC = () => {
     }
   };
 
+  // --- Quiz Analytics ---
+  const handleUpdateMistakes = async (wordIds: string[]) => {
+    if (!wordIds.length) return;
+    try {
+      const { error } = await supabase.rpc('increment_wrong_counts', { word_ids: wordIds });
+      if (error) throw error;
+      
+      // Opt: update local state seamlessly (background)
+      fetchGroups(); 
+    } catch (e) {
+      console.error("Error updating mistake counts:", e);
+    }
+  };
+
+  const handlePerfectCompletion = async (groupId: string) => {
+    try {
+      const { error } = await supabase.rpc('increment_perfect_completion', { p_group_id: groupId });
+      if (error) throw error;
+      
+      // Opt: update local state seamlessly (background)
+      fetchGroups();
+    } catch (e) {
+      console.error("Error updating perfect completion count:", e);
+    }
+  };
+
 
   if (loadingAuth) {
     return (
@@ -400,6 +431,8 @@ const App: React.FC = () => {
               <Quiz
                 group={activeGroup}
                 onExit={() => setView(ViewState.DASHBOARD)}
+                onUpdateMistakes={handleUpdateMistakes}
+                onPerfectCompletion={() => handlePerfectCompletion(activeGroup.id)}
               />
             )}
           </>

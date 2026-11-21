@@ -2,6 +2,7 @@ export interface Word {
   id: string;
   en: string;
   tr: string;
+  wrong_count?: number;
 }
 
 export interface WordGroup {
@@ -11,6 +12,7 @@ export interface WordGroup {
   level: string; // A1, A2, B1, etc.
   words: Word[];
   createdAt: number;
+  perfect_completion_count?: number;
 }
 
 export enum ViewState {

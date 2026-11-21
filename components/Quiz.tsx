@@ -6,9 +6,11 @@ import { prepareQuizData } from '../services/geminiService';
 interface QuizProps {
   group: WordGroup;
   onExit: () => void;
+  onUpdateMistakes?: (wordIds: string[]) => void;
+  onPerfectCompletion?: () => void;
 }
 
-const Quiz: React.FC<QuizProps> = ({ group, onExit }) => {
+const Quiz: React.FC<QuizProps> = ({ group, onExit, onUpdateMistakes, onPerfectCompletion }) => {
   const [questions, setQuestions] = useState<QuizQuestion[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [loadingState, setLoadingState] = useState<'direction-select' | 'generating' | 'ready'>('direction-select');
@@ -44,28 +46,29 @@ const Quiz: React.FC<QuizProps> = ({ group, onExit }) => {
     const currentQuestion = questions[currentIndex];
     setSelectedOption(option);
 
+    let currentWrongArr = wrongAnswers;
+
     if (option === currentQuestion.correctOption) {
       setIsCorrect(true);
       setScore(s => s + 1);
     } else {
       setIsCorrect(false);
-      setWrongAnswers(prev => [
-        {
-          word: currentQuestion.targetWord,
-          userAnswer: option,
-          correctAnswer: currentQuestion.correctOption
-        },
-        ...prev
-      ]);
+      const wrongItem = {
+        word: currentQuestion.targetWord,
+        userAnswer: option,
+        correctAnswer: currentQuestion.correctOption
+      };
+      setWrongAnswers(prev => [wrongItem, ...prev]);
+      currentWrongArr = [wrongItem, ...wrongAnswers];
     }
 
     // Her durumda otomatik geçiş (1.2 saniye bekleme süresi)
     setTimeout(() => {
-      handleNext();
+      handleNext(currentWrongArr);
     }, 1200);
   };
 
-  const handleNext = () => {
+  const handleNext = (finalWrongAnswers: WrongAnswer[]) => {
     setSelectedOption(null);
     setIsCorrect(null);
 
@@ -73,6 +76,14 @@ const Quiz: React.FC<QuizProps> = ({ group, onExit }) => {
       setCurrentIndex(c => c + 1);
     } else {
       setFinished(true);
+
+      // Analytics for Supabase
+      if (finalWrongAnswers.length === 0) {
+        onPerfectCompletion?.();
+      } else {
+        const uniqueIds = Array.from(new Set(finalWrongAnswers.map(w => w.word.id)));
+        onUpdateMistakes?.(uniqueIds);
+      }
     }
   };
 
@@ -112,11 +123,11 @@ const Quiz: React.FC<QuizProps> = ({ group, onExit }) => {
               <div className="flex items-center gap-4">
                 <div className="flex items-center gap-3 flex-shrink-0">
                   <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl bg-gradient-to-br from-red-500/20 to-red-600/10 flex items-center justify-center text-2xl sm:text-3xl ring-1 ring-red-500/30">
-                    🇹🇷
+                    <img src="assets/tr.svg" alt="Turkish" className="w-12 h-12 sm:w-14 sm:h-14 object-cover rounded-xl" />
                   </div>
                   <ArrowRight className="text-zinc-600 group-active:text-purple-400 transition-colors" size={20} />
                   <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl bg-gradient-to-br from-blue-500/20 to-blue-600/10 flex items-center justify-center text-2xl sm:text-3xl ring-1 ring-blue-500/30">
-                    🇬🇧
+                    <img src="assets/us.svg" alt="English" className="w-12 h-12 sm:w-14 sm:h-14 object-cover rounded-xl" />
                   </div>
                 </div>
                 <div className="flex-1 min-w-0">
@@ -134,11 +145,11 @@ const Quiz: React.FC<QuizProps> = ({ group, onExit }) => {
               <div className="flex items-center gap-4">
                 <div className="flex items-center gap-3 flex-shrink-0">
                   <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl bg-gradient-to-br from-blue-500/20 to-blue-600/10 flex items-center justify-center text-2xl sm:text-3xl ring-1 ring-blue-500/30">
-                    🇬🇧
+                    <img src="assets/us.svg" alt="English" className="w-full h-full object-cover rounded-xl" />
                   </div>
                   <ArrowRight className="text-zinc-600 group-active:text-purple-400 transition-colors" size={20} />
                   <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl bg-gradient-to-br from-red-500/20 to-red-600/10 flex items-center justify-center text-2xl sm:text-3xl ring-1 ring-red-500/30">
-                    🇹🇷
+                    <img src="assets/tr.svg" alt="Turkish" className="w-full h-full object-cover rounded-xl" />
                   </div>
                 </div>
                 <div className="flex-1 min-w-0">
