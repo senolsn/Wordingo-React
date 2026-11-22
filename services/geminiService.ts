@@ -1,32 +1,9 @@
 import { GoogleGenAI, Type, Schema } from "@google/genai";
 import { Word, QuizQuestion, QuizDirection } from '../types';
 
-const getApiKey = (): string => {
-  try {
-    return (
-      (typeof process !== 'undefined' && process.env?.GEMINI_API_KEY) ||
-      (typeof process !== 'undefined' && process.env?.API_KEY) ||
-      (import.meta as any)?.env?.VITE_GEMINI_API_KEY ||
-      ''
-    );
-  } catch {
-    return '';
-  }
-};
-
-const apiKey = getApiKey();
-
-let aiInstance: GoogleGenAI | null = null;
-const getAI = () => {
-  if (!aiInstance && apiKey) {
-    try {
-      aiInstance = new GoogleGenAI({ apiKey });
-    } catch (e) {
-      console.warn("Failed to initialize GoogleGenAI:", e);
-    }
-  }
-  return aiInstance;
-};
+// Vite derleme sırasında process.env.GEMINI_API_KEY doğrudan gerçek API anahtarı metniyle değiştirilir
+const apiKey: string = process.env.GEMINI_API_KEY || process.env.API_KEY || '';
+const ai = new GoogleGenAI({ apiKey });
 
 // Helper to generate a unique ID
 const generateId = () => Math.random().toString(36).substr(2, 9);
@@ -38,9 +15,8 @@ const capitalize = (str: string) => {
 };
 
 export const generateWordGroup = async (topic: string, level: string, count: number = 10): Promise<Word[]> => {
-  const ai = getAI();
-  if (!apiKey || !ai) {
-    throw new Error("Yapay zeka ile kelime grubu oluşturmak için GEMINI_API_KEY gereklidir. Lütfen GitHub Secrets veya .env ayarlarınızı kontrol edin.");
+  if (!apiKey) {
+    throw new Error("Yapay zeka ile kelime grubu oluşturmak için GEMINI_API_KEY bulunamadı. Lütfen GitHub Secrets ayarlarınızı kontrol edin.");
   }
 
   const modelId = "gemini-2.5-flash";
@@ -84,27 +60,22 @@ export const generateWordGroup = async (topic: string, level: string, count: num
 
   } catch (error) {
     console.error("Error generating word group:", error);
-    throw error;
+    throw new Error(`Yapay zeka kelime grubu oluştururken hata verdi: ${error instanceof Error ? error.message : String(error)}`);
   }
 };
 
 /**
- * Generates quiz questions in bulk to avoid latency during gameplay.
- * Processes words in batches if necessary, but here we assume a reasonable quiz size (e.g. 10-20 words).
+ * Generates quiz questions strictly with Gemini AI to guarantee intelligent, contextual distractors.
  * @param words - Words to quiz
  * @param direction - Quiz direction: 'tr-to-en' (show Turkish, answer English) or 'en-to-tr' (show English, answer Turkish)
  */
 export const prepareQuizData = async (words: Word[], direction: QuizDirection = 'tr-to-en'): Promise<QuizQuestion[]> => {
-  // Limit to 20 words max for a single quiz session to keep generation fast and reliable
-  const selectedWords = words.sort(() => 0.5 - Math.random()).slice(0, 20);
-
-  const ai = getAI();
-  // If API key is missing or AI client is not available, immediately use smart offline fallback without crashing!
-  if (!apiKey || !ai) {
-    console.info("Gemini API key is not present or AI is unavailable, generating quiz questions with offline distractor bank.");
-    return fallbackGeneration(selectedWords, direction);
+  if (!apiKey) {
+    throw new Error("Yapay zeka (AI) quiz çeldiricisi üretmek için GEMINI_API_KEY bulunamadı. Lütfen GitHub Secrets anahtarınızı kontrol edin.");
   }
 
+  // Limit to 20 words max for a single quiz session to keep generation fast and reliable
+  const selectedWords = words.sort(() => 0.5 - Math.random()).slice(0, 20);
   const modelId = "gemini-2.5-flash";
 
   const responseSchema: Schema = {
@@ -155,7 +126,9 @@ export const prepareQuizData = async (words: Word[], direction: QuizDirection = 
     });
 
     const rawData = response.text;
-    if (!rawData) return fallbackGeneration(selectedWords, direction);
+    if (!rawData) {
+      throw new Error("Yapay zeka boş yanıt döndürdü.");
+    }
 
     const parsedData = JSON.parse(rawData) as { targetWordId: string, distractors: string[] }[];
 
@@ -189,73 +162,14 @@ export const prepareQuizData = async (words: Word[], direction: QuizDirection = 
       }
     });
 
+    if (quizQuestions.length === 0) {
+      throw new Error("Yapay zeka hiçbir kelime için geçerli çeldirici üretemedi.");
+    }
+
     return quizQuestions;
 
   } catch (error) {
-    console.error("Error generating quiz bulk:", error);
-    return fallbackGeneration(selectedWords, direction);
+    console.error("Error generating quiz with AI:", error);
+    throw new Error(`Yapay zeka (Gemini AI) quiz hazırlarken hata verdi: ${error instanceof Error ? error.message : String(error)}`);
   }
-};
-
-// Curated vocabulary bank for intelligent distractor backfilling when decks have <4 words
-const DEFAULT_DISTRACTOR_POOL: { en: string; tr: string }[] = [
-  { en: "Approach", tr: "Yaklaşım" },
-  { en: "Benefit", tr: "Fayda" },
-  { en: "Challenge", tr: "Zorluk" },
-  { en: "Discover", tr: "Keşfetmek" },
-  { en: "Evaluate", tr: "Değerlendirmek" },
-  { en: "Feature", tr: "Özellik" },
-  { en: "Gather", tr: "Toplamak" },
-  { en: "Hesitate", tr: "Tereddüt etmek" },
-  { en: "Improve", tr: "Geliştirmek" },
-  { en: "Justify", tr: "Gerekçelendirmek" },
-  { en: "Maintain", tr: "Sürdürmek" },
-  { en: "Notice", tr: "Fark etmek" },
-  { en: "Observe", tr: "Gözlemlemek" },
-  { en: "Predict", tr: "Tahmin etmek" },
-  { en: "Require", tr: "Gerektirmek" },
-  { en: "Suggest", tr: "Önermek" },
-  { en: "Tackle", tr: "Ele almak" },
-  { en: "Utilize", tr: "Kullanmak" },
-  { en: "Vary", tr: "Çeşitlilik göstermek" },
-  { en: "Witness", tr: "Tanık olmak" }
-];
-
-// Fallback if AI fails completely or for small word counts
-const fallbackGeneration = (words: Word[], direction: QuizDirection): QuizQuestion[] => {
-  const isEnglishAnswer = direction === 'tr-to-en';
-
-  return words.map(target => {
-    // Pick distractors from other words in the list first
-    const otherWords = words.filter(w => w.id !== target.id).map(w => isEnglishAnswer ? w.en : w.tr);
-    const shuffled = [...otherWords].sort(() => 0.5 - Math.random());
-    let distractors = shuffled.slice(0, 3);
-
-    // If still fewer than 3 distractors (e.g. deck has 1-3 words), backfill from curated vocabulary bank
-    if (distractors.length < 3) {
-      const bankFiltered = DEFAULT_DISTRACTOR_POOL
-        .map(item => isEnglishAnswer ? item.en : item.tr)
-        .filter(term => term.toLowerCase() !== (isEnglishAnswer ? target.en : target.tr).toLowerCase() && !distractors.includes(term))
-        .sort(() => 0.5 - Math.random());
-
-      for (const bankWord of bankFiltered) {
-        if (distractors.length >= 3) break;
-        distractors.push(bankWord);
-      }
-    }
-
-    // Consistency: Capitalize all options
-    const capitalizedDistractors = distractors.map(d => capitalize(d));
-    const correctAnswer = isEnglishAnswer ? target.en : target.tr;
-    const capitalizedCorrect = capitalize(correctAnswer);
-
-    const options = [...capitalizedDistractors, capitalizedCorrect].sort(() => 0.5 - Math.random());
-
-    return {
-      targetWord: target,
-      distractors: capitalizedDistractors,
-      correctOption: capitalizedCorrect,
-      options
-    };
-  });
 };
