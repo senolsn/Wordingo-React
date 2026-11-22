@@ -492,11 +492,11 @@ const Quiz: React.FC<QuizProps> = ({
           </p>
         </div>
 
-        {/* 4 Option Buttons */}
-        <div className="space-y-3">
+        {/* 4 Option Buttons (Keyed to question ID to guarantee complete DOM recycling on mobile) */}
+        <div key={`options-container-${currentQuestion.targetWord.id}-${currentIndex}`} className="space-y-3">
           {currentQuestion.options.map((option, idx) => {
             let stateStyles =
-              'bg-white dark:bg-slate-900 border-slate-200/80 dark:border-slate-800 text-slate-800 dark:text-slate-100 hover:border-blue-400 dark:hover:border-blue-500';
+              'bg-white dark:bg-slate-900 border-slate-200/80 dark:border-slate-800 text-slate-800 dark:text-slate-100 quiz-option-hover';
             let iconComponent = null;
 
             if (selectedOption) {
@@ -515,13 +515,16 @@ const Quiz: React.FC<QuizProps> = ({
 
             return (
               <button
-                key={`q-${currentIndex}-opt-${idx}`}
+                key={`opt-${currentQuestion.targetWord.id}-${idx}`}
                 onClick={(e) => {
                   e.currentTarget.blur();
                   handleOptionClick(option);
                 }}
+                onTouchEnd={(e) => {
+                  e.currentTarget.blur();
+                }}
                 disabled={selectedOption !== null}
-                className={`relative w-full p-4 rounded-2xl border-2 text-sm sm:text-base font-semibold transition-all duration-150 min-h-[56px] flex items-center justify-center text-center shadow-sm active:scale-98 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-900 ${stateStyles}`}
+                className={`quiz-option-btn relative w-full p-4 rounded-2xl border-2 text-sm sm:text-base font-semibold transition-colors duration-150 min-h-[56px] flex items-center justify-center text-center shadow-sm active:scale-98 focus:outline-none focus:ring-0 sm:focus-visible:ring-2 sm:focus-visible:ring-blue-500 sm:focus-visible:ring-offset-2 dark:sm:focus-visible:ring-offset-slate-900 ${stateStyles}`}
               >
                 <span className="hidden sm:inline-flex items-center justify-center w-6 h-6 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-500 text-xs font-mono font-bold absolute left-3.5">
                   {idx + 1}

@@ -570,3 +570,46 @@ html.dark .mobile-input::placeholder {
   .xs-p-3 { padding: 12px !important; }
   .xs-gap-2 { gap: 8px !important; }
 }
+
+/* ===================================
+   MOBILE & PWA QUIZ TOUCH FIXES
+   Eliminates sticky blue hover/focus rings on touchscreens
+   =================================== */
+
+.quiz-option-btn {
+  -webkit-tap-highlight-color: transparent !important;
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* On real mouse devices: show blue border on hover */
+@media (hover: hover) and (pointer: fine) {
+  .quiz-option-hover:hover:not(:disabled) {
+    border-color: #60a5fa !important; /* blue-400 */
+  }
+  html.dark .quiz-option-hover:hover:not(:disabled) {
+    border-color: #3b82f6 !important; /* blue-500 */
+  }
+}
+
+/* On mobile touch devices / PWA: NEVER stick hover or focus rings */
+@media (hover: none), (pointer: coarse) {
+  .quiz-option-btn,
+  .quiz-option-btn:hover,
+  .quiz-option-btn:focus,
+  .quiz-option-btn:focus-visible {
+    outline: none !important;
+    box-shadow: none !important;
+    -webkit-tap-highlight-color: transparent !important;
+  }
+  
+  /* Reset hover border on touch devices to neutral slate */
+  .quiz-option-hover:hover:not(:disabled) {
+    border-color: rgba(226, 232, 240, 0.8) !important;
+  }
+  html.dark .quiz-option-hover:hover:not(:disabled) {
+    border-color: rgba(30, 41, 59, 0.8) !important;
+  }
+}
+
