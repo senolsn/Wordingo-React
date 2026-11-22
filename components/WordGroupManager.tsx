@@ -232,9 +232,14 @@ const WordGroupManager: React.FC<WordGroupManagerProps> = ({
                         {group.level}
                       </span>
                       {group.description === 'AI Generated' && (
-                        <span className="px-2.5 py-1 text-xs font-semibold rounded-lg bg-purple-500/10 text-purple-400 border border-purple-500/30 flex items-center gap-1">
-                          <Sparkles size={10} />
+                        <span className="px-2.5 py-1 text-xs font-semibold rounded-lg bg-zinc-800 text-zinc-300 border border-zinc-700 flex items-center gap-1">
+                          <Sparkles size={10} className="text-zinc-400" />
                           AI
+                        </span>
+                      )}
+                      {(group.perfect_completion_count ?? 0) > 0 && (
+                        <span className="px-2 py-0.5 text-xs font-medium rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center gap-1">
+                          ★ {group.perfect_completion_count}
                         </span>
                       )}
                     </div>
@@ -306,10 +311,10 @@ const WordGroupManager: React.FC<WordGroupManagerProps> = ({
                 {/* AI Generate */}
                 <button
                   onClick={openAIModal}
-                  className="w-full flex items-center gap-4 p-4 rounded-xl bg-gradient-to-r from-purple-500/10 to-blue-500/10 border border-purple-500/30 active:scale-[0.98] transition-transform haptic-feedback"
+                  className="w-full flex items-center gap-4 p-4 rounded-xl bg-zinc-800 border border-zinc-700 hover:border-zinc-600 active:scale-[0.98] transition-all haptic-feedback"
                 >
-                  <div className="w-12 h-12 rounded-xl bg-purple-500/20 flex items-center justify-center">
-                    <Wand2 size={22} className="text-purple-400" />
+                  <div className="w-12 h-12 rounded-xl bg-zinc-700 border border-zinc-600 flex items-center justify-center text-zinc-100">
+                    <Wand2 size={22} />
                   </div>
                   <div className="text-left">
                     <h4 className="font-semibold text-white">AI Oluşturucu</h4>
@@ -407,8 +412,8 @@ const WordGroupManager: React.FC<WordGroupManagerProps> = ({
             <div className="sm:hidden w-12 h-1.5 bg-zinc-700 rounded-full mx-auto mb-6 -mt-2" />
 
             <div className="flex items-center gap-3 mb-6">
-              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-500/20 to-blue-500/20 flex items-center justify-center">
-                <Wand2 size={22} className="text-purple-400" />
+              <div className="w-12 h-12 rounded-xl bg-zinc-800 border border-zinc-700 flex items-center justify-center text-zinc-100">
+                <Wand2 size={22} />
               </div>
               <div>
                 <h2 className="text-xl font-bold text-white">AI Oluşturucu</h2>

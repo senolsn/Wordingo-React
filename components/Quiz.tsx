@@ -40,32 +40,63 @@ const Quiz: React.FC<QuizProps> = ({ group, onExit, onUpdateMistakes, onPerfectC
     }
   };
 
+  // Keyboard shortcut support (1-4 for options, Space/Enter to advance on error, Esc to exit)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (loadingState !== 'ready' || finished) return;
+
+      if (e.key === 'Escape') {
+        onExit();
+        return;
+      }
+
+      if (selectedOption !== null) {
+        // If answered and was wrong, Space or Enter advances
+        if (!isCorrect && (e.key === 'Enter' || e.key === ' ')) {
+          e.preventDefault();
+          handleNext(wrongAnswers);
+        }
+        return;
+      }
+
+      // Keys 1, 2, 3, 4
+      const num = parseInt(e.key, 10);
+      if (num >= 1 && num <= 4) {
+        const currentOpts = questions[currentIndex]?.options;
+        if (currentOpts && currentOpts[num - 1]) {
+          e.preventDefault();
+          handleOptionClick(currentOpts[num - 1]);
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [loadingState, finished, selectedOption, isCorrect, currentIndex, questions, wrongAnswers]);
+
   const handleOptionClick = (option: string) => {
     if (selectedOption) return; // Prevent double click
 
     const currentQuestion = questions[currentIndex];
     setSelectedOption(option);
 
-    let currentWrongArr = wrongAnswers;
-
     if (option === currentQuestion.correctOption) {
       setIsCorrect(true);
       setScore(s => s + 1);
+      // Doğru cevapta akıcı ve hızlı geçiş (600ms)
+      setTimeout(() => {
+        handleNext(wrongAnswers);
+      }, 600);
     } else {
       setIsCorrect(false);
-      const wrongItem = {
+      const wrongItem: WrongAnswer = {
         word: currentQuestion.targetWord,
         userAnswer: option,
         correctAnswer: currentQuestion.correctOption
       };
       setWrongAnswers(prev => [wrongItem, ...prev]);
-      currentWrongArr = [wrongItem, ...wrongAnswers];
+      // Yanlış cevapta otomatik geçiş durduruldu; öğrenci inceleyip "Devam Et" butonuna basar!
     }
-
-    // Her durumda otomatik geçiş (1.2 saniye bekleme süresi)
-    setTimeout(() => {
-      handleNext(currentWrongArr);
-    }, 1200);
   };
 
   const handleNext = (finalWrongAnswers: WrongAnswer[]) => {
@@ -87,6 +118,29 @@ const Quiz: React.FC<QuizProps> = ({ group, onExit, onUpdateMistakes, onPerfectC
     }
   };
 
+  const retryWrongWords = async () => {
+    if (wrongAnswers.length === 0) return;
+    const missedWords = Array.from(
+      new Map(wrongAnswers.map(wa => [wa.word.id, wa.word])).values()
+    );
+    setLoadingState('generating');
+    setFinished(false);
+    setScore(0);
+    setCurrentIndex(0);
+    setWrongAnswers([]);
+    setSelectedOption(null);
+    setIsCorrect(null);
+    try {
+      const generated = await prepareQuizData(missedWords, quizDirection || 'tr-to-en');
+      setQuestions(generated);
+      setLoadingState('ready');
+    } catch (err) {
+      console.error("Hataları tekrarlama hatası:", err);
+      alert("Hataları tekrarlama hazırlanırken hata oluştu.");
+      onExit();
+    }
+  };
+
   // Direction selection screen - MOBILE OPTIMIZED
   if (loadingState === 'direction-select') {
     return (
@@ -105,7 +159,7 @@ const Quiz: React.FC<QuizProps> = ({ group, onExit, onUpdateMistakes, onPerfectC
 
         {/* Content */}
         <div className="flex-1 flex flex-col items-center justify-center px-5 py-8 animate-slide-up">
-          <div className="w-20 h-20 bg-gradient-to-br from-purple-500/20 to-blue-500/20 text-purple-400 rounded-2xl flex items-center justify-center mb-8 ring-1 ring-purple-500/30">
+          <div className="w-20 h-20 bg-zinc-900 border border-zinc-800 text-zinc-100 rounded-2xl flex items-center justify-center mb-8">
             <Languages size={40} />
           </div>
 
@@ -122,17 +176,17 @@ const Quiz: React.FC<QuizProps> = ({ group, onExit, onUpdateMistakes, onPerfectC
             >
               <div className="flex items-center gap-4">
                 <div className="flex items-center gap-3 flex-shrink-0">
-                  <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl bg-gradient-to-br from-red-500/20 to-red-600/10 flex items-center justify-center text-2xl sm:text-3xl ring-1 ring-red-500/30">
-                    <img src="assets/tr.svg" alt="Turkish" className="w-12 h-12 sm:w-14 sm:h-14 object-cover rounded-xl" />
+                  <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl bg-zinc-800 border border-zinc-700 flex items-center justify-center overflow-hidden">
+                    <img src="assets/tr.svg" alt="Turkish" className="w-full h-full object-cover" />
                   </div>
-                  <ArrowRight className="text-zinc-600 group-active:text-purple-400 transition-colors" size={20} />
-                  <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl bg-gradient-to-br from-blue-500/20 to-blue-600/10 flex items-center justify-center text-2xl sm:text-3xl ring-1 ring-blue-500/30">
-                    <img src="assets/us.svg" alt="English" className="w-12 h-12 sm:w-14 sm:h-14 object-cover rounded-xl" />
+                  <ArrowRight className="text-zinc-500 group-active:text-white transition-colors" size={20} />
+                  <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl bg-zinc-800 border border-zinc-700 flex items-center justify-center overflow-hidden">
+                    <img src="assets/us.svg" alt="English" className="w-full h-full object-cover" />
                   </div>
                 </div>
                 <div className="flex-1 min-w-0">
                   <h3 className="text-base sm:text-lg font-semibold text-white">Türkçe → İngilizce</h3>
-                  <p className="text-xs sm:text-sm text-zinc-500 truncate">Türkçe kelime, İngilizce karşılık</p>
+                  <p className="text-xs sm:text-sm text-zinc-400 truncate">Türkçe kelime, İngilizce karşılık</p>
                 </div>
               </div>
             </button>
@@ -144,17 +198,17 @@ const Quiz: React.FC<QuizProps> = ({ group, onExit, onUpdateMistakes, onPerfectC
             >
               <div className="flex items-center gap-4">
                 <div className="flex items-center gap-3 flex-shrink-0">
-                  <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl bg-gradient-to-br from-blue-500/20 to-blue-600/10 flex items-center justify-center text-2xl sm:text-3xl ring-1 ring-blue-500/30">
-                    <img src="assets/us.svg" alt="English" className="w-full h-full object-cover rounded-xl" />
+                  <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl bg-zinc-800 border border-zinc-700 flex items-center justify-center overflow-hidden">
+                    <img src="assets/us.svg" alt="English" className="w-full h-full object-cover" />
                   </div>
-                  <ArrowRight className="text-zinc-600 group-active:text-purple-400 transition-colors" size={20} />
-                  <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl bg-gradient-to-br from-red-500/20 to-red-600/10 flex items-center justify-center text-2xl sm:text-3xl ring-1 ring-red-500/30">
-                    <img src="assets/tr.svg" alt="Turkish" className="w-full h-full object-cover rounded-xl" />
+                  <ArrowRight className="text-zinc-500 group-active:text-white transition-colors" size={20} />
+                  <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl bg-zinc-800 border border-zinc-700 flex items-center justify-center overflow-hidden">
+                    <img src="assets/tr.svg" alt="Turkish" className="w-full h-full object-cover" />
                   </div>
                 </div>
                 <div className="flex-1 min-w-0">
                   <h3 className="text-base sm:text-lg font-semibold text-white">İngilizce → Türkçe</h3>
-                  <p className="text-xs sm:text-sm text-zinc-500 truncate">İngilizce kelime, Türkçe karşılık</p>
+                  <p className="text-xs sm:text-sm text-zinc-400 truncate">İngilizce kelime, Türkçe karşılık</p>
                 </div>
               </div>
             </button>
@@ -169,17 +223,16 @@ const Quiz: React.FC<QuizProps> = ({ group, onExit, onUpdateMistakes, onPerfectC
     return (
       <div className="full-height-mobile flex flex-col items-center justify-center bg-zinc-950 text-zinc-100 px-6 safe-area-inset-bottom">
         <div className="animate-scale-in text-center">
-          <div className="relative">
-            <Loader2 className="h-16 w-16 animate-spin text-purple-400 mb-6 mx-auto" />
-            <div className="absolute inset-0 h-16 w-16 bg-purple-500/20 rounded-full blur-xl mx-auto" />
+          <div className="relative mb-6">
+            <Loader2 className="h-16 w-16 animate-spin text-zinc-100 mx-auto" />
           </div>
           <h2 className="text-2xl font-bold tracking-tight mb-2">Quiz Hazırlanıyor</h2>
           <p className="text-zinc-400">Yapay zeka çeldirici şıkları üretiyor...</p>
-          <div className="mt-4 px-4 py-2 rounded-full bg-zinc-900 border border-zinc-800 inline-flex items-center gap-2 text-sm">
+          <div className="mt-4 px-4 py-2 rounded-full bg-zinc-900 border border-zinc-800 inline-flex items-center gap-2 text-sm text-zinc-300 font-medium">
             {quizDirection === 'tr-to-en' ? (
-              <>🇹🇷 <ArrowRight size={14} className="text-zinc-500" /> 🇬🇧</>
+              <>TR <ArrowRight size={14} className="text-zinc-500" /> EN</>
             ) : (
-              <>🇬🇧 <ArrowRight size={14} className="text-zinc-500" /> 🇹🇷</>
+              <>EN <ArrowRight size={14} className="text-zinc-500" /> TR</>
             )}
           </div>
         </div>
@@ -201,16 +254,16 @@ const Quiz: React.FC<QuizProps> = ({ group, onExit, onUpdateMistakes, onPerfectC
 
         {/* Content */}
         <div className="flex-1 flex flex-col items-center justify-center px-5 py-8 animate-scale-in">
-          <div className={`w-24 h-24 rounded-3xl flex items-center justify-center mb-8 ${isGoodScore
-            ? 'bg-gradient-to-br from-yellow-500/20 to-amber-500/20 text-yellow-500 ring-1 ring-yellow-500/30'
-            : 'bg-gradient-to-br from-purple-500/20 to-blue-500/20 text-purple-400 ring-1 ring-purple-500/30'
+          <div className={`w-24 h-24 rounded-3xl border flex items-center justify-center mb-8 ${isGoodScore
+            ? 'bg-zinc-900 border-emerald-500/30 text-emerald-400'
+            : 'bg-zinc-900 border-zinc-800 text-zinc-300'
             }`}>
             <Trophy size={48} />
           </div>
 
           <h2 className="text-3xl font-bold mb-2">{isGoodScore ? 'Tebrikler!' : 'Quiz Bitti!'}</h2>
           <p className="text-zinc-400 mb-8">
-            {isGoodScore ? 'Harika bir performans gösterdin!' : 'Pratik yapmaya devam et!'}
+            {isGoodScore ? 'Harika bir performans gösterdin!' : 'Hatalarını tekrar ederek tam kavrayışa ulaşabilirsin.'}
           </p>
 
           {/* Score Display */}
@@ -219,7 +272,7 @@ const Quiz: React.FC<QuizProps> = ({ group, onExit, onUpdateMistakes, onPerfectC
               <div
                 className="absolute inset-0 rounded-full"
                 style={{
-                  background: `conic-gradient(${isGoodScore ? '#22c55e' : '#a855f7'} ${percentage}%, transparent 0)`,
+                  background: `conic-gradient(${isGoodScore ? '#22c55e' : '#fafafa'} ${percentage}%, transparent 0)`,
                   maskImage: 'radial-gradient(transparent 60%, black 61%)',
                   WebkitMaskImage: 'radial-gradient(transparent 60%, black 61%)'
                 }}
@@ -234,11 +287,11 @@ const Quiz: React.FC<QuizProps> = ({ group, onExit, onUpdateMistakes, onPerfectC
           {/* Stats */}
           <div className="grid grid-cols-2 gap-4 w-full max-w-xs mb-8">
             <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-4 text-center">
-              <div className="text-2xl font-bold text-green-500 mb-1">{score}</div>
+              <div className="text-2xl font-bold text-emerald-400 mb-1">{score}</div>
               <div className="text-xs text-zinc-500">Doğru</div>
             </div>
             <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-4 text-center">
-              <div className="text-2xl font-bold text-red-500 mb-1">{wrongAnswers.length}</div>
+              <div className="text-2xl font-bold text-rose-400 mb-1">{wrongAnswers.length}</div>
               <div className="text-xs text-zinc-500">Yanlış</div>
             </div>
           </div>
@@ -247,19 +300,32 @@ const Quiz: React.FC<QuizProps> = ({ group, onExit, onUpdateMistakes, onPerfectC
           {wrongAnswers.length > 0 && (
             <button
               onClick={() => setShowWrongPanel(true)}
-              className="flex items-center gap-2 text-sm text-zinc-400 mb-8 px-4 py-2 rounded-lg bg-zinc-900 border border-zinc-800 haptic-feedback"
+              className="flex items-center gap-2 text-sm text-zinc-400 mb-8 px-4 py-2 rounded-lg bg-zinc-900 border border-zinc-800 haptic-feedback hover:text-white"
             >
               <AlertCircle size={16} />
-              Hatalı cevapları gör ({wrongAnswers.length})
+              Hatalı cevapları incele ({wrongAnswers.length})
             </button>
           )}
         </div>
 
         {/* Bottom Actions */}
         <div className="px-5 pb-6 space-y-3">
+          {wrongAnswers.length > 0 && (
+            <button
+              onClick={retryWrongWords}
+              className="w-full bg-white text-zinc-950 font-semibold py-4 rounded-xl transition-all active:scale-[0.98] haptic-feedback text-base flex items-center justify-center gap-2 shadow-lg"
+            >
+              <RotateCcw size={18} />
+              <span>Sadece Hataları Tekrarla ({wrongAnswers.length} Kelime)</span>
+            </button>
+          )}
           <button
             onClick={onExit}
-            className="w-full bg-white text-zinc-950 font-semibold py-4 rounded-xl transition-all active:scale-[0.98] haptic-feedback text-base"
+            className={`w-full font-medium py-3.5 rounded-xl transition-all active:scale-[0.98] haptic-feedback text-base ${
+              wrongAnswers.length > 0
+                ? 'bg-zinc-900 border border-zinc-800 text-zinc-300 hover:text-white'
+                : 'bg-white text-zinc-950 font-semibold py-4'
+            }`}
           >
             Ana Ekrana Dön
           </button>
@@ -326,25 +392,39 @@ const Quiz: React.FC<QuizProps> = ({ group, onExit, onUpdateMistakes, onPerfectC
           <button
             onClick={onExit}
             className="flex items-center justify-center w-10 h-10 rounded-xl bg-zinc-900 text-zinc-400 active:text-white active:bg-zinc-800 transition-colors haptic-feedback"
+            title="Çıkış (Esc)"
           >
             <X size={20} />
           </button>
 
-          <div className="flex items-center gap-3">
-            <div className="px-3 py-1.5 rounded-full bg-zinc-900 border border-zinc-800 text-sm">
-              {quizDirection === 'tr-to-en' ? '🇹🇷→🇬🇧' : '🇬🇧→🇹🇷'}
+          <div className="flex items-center gap-2">
+            <div className="px-3 py-1 rounded-full bg-zinc-900 border border-zinc-800 text-xs font-semibold text-zinc-300">
+              {quizDirection === 'tr-to-en' ? 'TR → EN' : 'EN → TR'}
             </div>
-            <div className="flex items-center gap-2">
-              <span className="text-lg font-bold text-white">{currentIndex + 1}</span>
-              <span className="text-zinc-500">/</span>
+            <div className="flex items-center gap-1.5 text-sm font-medium">
+              <span className="font-bold text-white">{currentIndex + 1}</span>
+              <span className="text-zinc-600">/</span>
               <span className="text-zinc-500">{questions.length}</span>
             </div>
           </div>
 
-          {/* Score pill */}
-          <div className="flex items-center gap-1 px-3 py-1.5 rounded-full bg-green-500/10 border border-green-500/20">
-            <Check size={14} className="text-green-500" />
-            <span className="text-green-500 font-semibold text-sm">{score}</span>
+          <div className="flex items-center gap-2">
+            {/* Header wrong count pill */}
+            {wrongAnswers.length > 0 && (
+              <button
+                onClick={() => setShowWrongPanel(true)}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs font-semibold hover:bg-rose-500/20 transition-colors"
+                title="Hatalı cevapları incele"
+              >
+                <AlertCircle size={14} />
+                <span>{wrongAnswers.length}</span>
+              </button>
+            )}
+            {/* Score pill */}
+            <div className="flex items-center gap-1 px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 font-semibold text-xs">
+              <Check size={14} />
+              <span>{score}</span>
+            </div>
           </div>
         </div>
 
@@ -378,11 +458,11 @@ const Quiz: React.FC<QuizProps> = ({ group, onExit, onUpdateMistakes, onPerfectC
 
               if (selectedOption) {
                 if (option === currentQuestion.correctOption) {
-                  btnClass = "bg-green-500/10 border-green-500/50 text-green-400 ring-2 ring-green-500/30";
-                  iconComponent = <Check className="absolute right-4 w-5 h-5 text-green-500" />;
+                  btnClass = "bg-emerald-500/10 border-emerald-500/50 text-emerald-400 ring-2 ring-emerald-500/30";
+                  iconComponent = <Check className="absolute right-4 w-5 h-5 text-emerald-500" />;
                 } else if (option === selectedOption) {
-                  btnClass = "bg-red-500/10 border-red-500/50 text-red-400 ring-2 ring-red-500/30 animate-shake";
-                  iconComponent = <X className="absolute right-4 w-5 h-5 text-red-500" />;
+                  btnClass = "bg-rose-500/10 border-rose-500/50 text-rose-400 ring-2 ring-rose-500/30 animate-shake";
+                  iconComponent = <X className="absolute right-4 w-5 h-5 text-rose-500" />;
                 } else {
                   btnClass = "bg-zinc-900/50 border-zinc-800 text-zinc-600 opacity-50";
                 }
@@ -395,29 +475,32 @@ const Quiz: React.FC<QuizProps> = ({ group, onExit, onUpdateMistakes, onPerfectC
                   disabled={selectedOption !== null}
                   className={`relative w-full p-4 sm:p-5 rounded-xl border-2 text-base sm:text-lg font-medium transition-all duration-200 min-h-[60px] flex items-center justify-center text-center haptic-feedback ${btnClass}`}
                 >
+                  <span className="hidden sm:inline-flex items-center justify-center w-6 h-6 rounded-md bg-zinc-800 border border-zinc-700 text-zinc-400 text-xs font-mono absolute left-4">
+                    {idx + 1}
+                  </span>
                   <span className="text-center w-full px-8">{option}</span>
                   {iconComponent}
                 </button>
               );
             })}
+
+            {/* Manual Advance Bar on Error */}
+            {selectedOption !== null && !isCorrect && (
+              <div className="pt-4 flex flex-col items-center animate-slide-up">
+                <button
+                  onClick={() => handleNext(wrongAnswers)}
+                  className="w-full sm:w-auto px-8 py-3.5 rounded-xl bg-white text-zinc-950 font-semibold flex items-center justify-center gap-2 hover:bg-zinc-200 transition-all active:scale-[0.98] shadow-lg text-base"
+                >
+                  <span>Devam Et</span>
+                  <span className="hidden sm:inline text-xs text-zinc-500 font-normal border border-zinc-300 rounded px-1.5 py-0.5 ml-1">Space ↵</span>
+                  <ArrowRight size={18} />
+                </button>
+                <p className="text-zinc-500 text-xs mt-2">Cevabı inceledikten sonra devam edebilirsiniz</p>
+              </div>
+            )}
           </div>
         </div>
       </div>
-
-      {/* Mobile Wrong Answers Indicator */}
-      {wrongAnswers.length > 0 && (
-        <button
-          onClick={() => setShowWrongPanel(true)}
-          className="fixed bottom-6 right-6 w-14 h-14 rounded-2xl bg-red-500/20 border border-red-500/30 flex items-center justify-center shadow-lg shadow-red-500/10 haptic-feedback safe-area-inset-bottom z-40"
-        >
-          <div className="relative">
-            <AlertCircle size={24} className="text-red-400" />
-            <div className="absolute -top-2 -right-2 w-5 h-5 bg-red-500 rounded-full flex items-center justify-center text-xs font-bold text-white">
-              {wrongAnswers.length}
-            </div>
-          </div>
-        </button>
-      )}
 
       {/* Wrong Answers Bottom Sheet */}
       {showWrongPanel && (

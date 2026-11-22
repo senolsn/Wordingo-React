@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { supabase } from '../lib/supabaseClient';
-import { Loader2, LogIn, UserPlus, AlertCircle, Languages, Sparkles } from 'lucide-react';
+import { Loader2, LogIn, UserPlus, AlertCircle, Languages, Sparkles, BookOpen, Target } from 'lucide-react';
 
 export const Auth: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
@@ -34,21 +34,15 @@ export const Auth: React.FC = () => {
 
   return (
     <div className="full-height-mobile flex flex-col bg-zinc-950 safe-area-inset-top safe-area-inset-bottom">
-      {/* Decorative Background */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[600px] bg-purple-500/5 rounded-full blur-3xl" />
-        <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-blue-500/5 rounded-full blur-3xl" />
-      </div>
-
       {/* Content */}
       <div className="flex-1 flex flex-col items-center justify-center px-5 py-8 relative z-10">
         <div className="w-full max-w-sm">
           {/* Logo & Header */}
           <div className="text-center mb-10 animate-slide-down">
-            <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-zinc-800 to-zinc-900 rounded-2xl mb-6 ring-1 ring-zinc-700 shadow-2xl relative">
+            <div className="inline-flex items-center justify-center w-20 h-20 bg-zinc-900 border border-zinc-800 rounded-2xl mb-6 shadow-xl relative">
               <Languages size={36} className="text-white" />
-              <div className="absolute -bottom-1 -right-1 w-7 h-7 bg-gradient-to-br from-purple-500 to-blue-500 rounded-lg flex items-center justify-center">
-                <Sparkles size={14} className="text-white" />
+              <div className="absolute -bottom-1 -right-1 w-7 h-7 bg-zinc-800 border border-zinc-700 rounded-lg flex items-center justify-center">
+                <Sparkles size={14} className="text-zinc-200" />
               </div>
             </div>
             <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-white mb-2">
@@ -138,22 +132,22 @@ export const Auth: React.FC = () => {
           {/* Features Preview */}
           <div className="mt-10 grid grid-cols-3 gap-4 animate-fade-in" style={{ animationDelay: '200ms' }}>
             <div className="text-center">
-              <div className="w-12 h-12 mx-auto bg-zinc-900 border border-zinc-800 rounded-xl flex items-center justify-center mb-2">
-                <span className="text-xl">🤖</span>
+              <div className="w-12 h-12 mx-auto bg-zinc-900 border border-zinc-800 rounded-xl flex items-center justify-center mb-2 text-zinc-300">
+                <Sparkles size={20} />
               </div>
-              <p className="text-xs text-zinc-500">AI Destekli</p>
+              <p className="text-xs text-zinc-400 font-medium">AI Destekli</p>
             </div>
             <div className="text-center">
-              <div className="w-12 h-12 mx-auto bg-zinc-900 border border-zinc-800 rounded-xl flex items-center justify-center mb-2">
-                <span className="text-xl">📚</span>
+              <div className="w-12 h-12 mx-auto bg-zinc-900 border border-zinc-800 rounded-xl flex items-center justify-center mb-2 text-zinc-300">
+                <BookOpen size={20} />
               </div>
-              <p className="text-xs text-zinc-500">Kelime Grupları</p>
+              <p className="text-xs text-zinc-400 font-medium">Kelime Grupları</p>
             </div>
             <div className="text-center">
-              <div className="w-12 h-12 mx-auto bg-zinc-900 border border-zinc-800 rounded-xl flex items-center justify-center mb-2">
-                <span className="text-xl">🎯</span>
+              <div className="w-12 h-12 mx-auto bg-zinc-900 border border-zinc-800 rounded-xl flex items-center justify-center mb-2 text-zinc-300">
+                <Target size={20} />
               </div>
-              <p className="text-xs text-zinc-500">Akıllı Quiz</p>
+              <p className="text-xs text-zinc-400 font-medium">Akıllı Quiz</p>
             </div>
           </div>
         </div>
@@ -161,8 +155,8 @@ export const Auth: React.FC = () => {
 
       {/* Footer */}
       <div className="flex-shrink-0 px-5 pb-6 text-center">
-        <p className="text-xs text-zinc-600">
-          @Codeweh - AI Vocabulary App
+        <p className="text-xs text-zinc-400">
+          Wordingo — The Minimalist Study Deck
         </p>
       </div>
     </div>

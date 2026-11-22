@@ -278,8 +278,7 @@ const App: React.FC = () => {
     return (
       <div className="full-height-mobile bg-zinc-950 flex flex-col items-center justify-center text-white">
         <div className="relative">
-          <Loader2 className="animate-spin w-10 h-10 text-purple-400" />
-          <div className="absolute inset-0 w-10 h-10 bg-purple-500/20 rounded-full blur-xl" />
+          <Loader2 className="animate-spin w-10 h-10 text-white" />
         </div>
         <p className="mt-4 text-zinc-400 text-sm animate-pulse">Yükleniyor...</p>
       </div>
@@ -300,8 +299,8 @@ const App: React.FC = () => {
             <div className="flex items-center gap-3">
               <div className="relative w-10 h-10 sm:w-11 sm:h-11 bg-gradient-to-br from-zinc-800 to-zinc-900 rounded-xl flex items-center justify-center text-white ring-1 ring-zinc-700">
                 <Languages size={20} />
-                <div className="absolute -bottom-0.5 -right-0.5 w-4 h-4 sm:w-5 sm:h-5 bg-gradient-to-br from-purple-500 to-blue-500 rounded-md flex items-center justify-center">
-                  <Sparkles size={10} className="text-white" />
+                <div className="absolute -bottom-0.5 -right-0.5 w-4 h-4 sm:w-5 sm:h-5 bg-zinc-800 border border-zinc-700 rounded-md flex items-center justify-center">
+                  <Sparkles size={10} className="text-zinc-200" />
                 </div>
               </div>
               <div className="hidden sm:block">
