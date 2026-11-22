@@ -1,3 +1,3 @@
 @echo off
-cd C:\Users\senol\source\Wordingo-React
-serve -s dist -l 1372
+cd /d "%~dp0"
+npx serve -s dist -l 1372
