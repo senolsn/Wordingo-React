@@ -113,6 +113,10 @@ const Quiz: React.FC<QuizProps> = ({
   const handleOptionClick = (option: string) => {
     if (selectedOption) return;
 
+    if (typeof document !== 'undefined' && document.activeElement instanceof HTMLElement) {
+      document.activeElement.blur();
+    }
+
     const currentQuestion = questions[currentIndex];
     setSelectedOption(option);
 
@@ -134,6 +138,10 @@ const Quiz: React.FC<QuizProps> = ({
   };
 
   const handleNext = (currentWrongAnswers: WrongAnswer[]) => {
+    if (typeof document !== 'undefined' && document.activeElement instanceof HTMLElement) {
+      document.activeElement.blur();
+    }
+
     if (currentIndex < questions.length - 1) {
       setCurrentIndex((prev) => prev + 1);
       setSelectedOption(null);
@@ -507,10 +515,13 @@ const Quiz: React.FC<QuizProps> = ({
 
             return (
               <button
-                key={idx}
-                onClick={() => handleOptionClick(option)}
+                key={`q-${currentIndex}-opt-${idx}`}
+                onClick={(e) => {
+                  e.currentTarget.blur();
+                  handleOptionClick(option);
+                }}
                 disabled={selectedOption !== null}
-                className={`relative w-full p-4 rounded-2xl border-2 text-sm sm:text-base font-semibold transition-all duration-150 min-h-[56px] flex items-center justify-center text-center shadow-sm active:scale-98 ${stateStyles}`}
+                className={`relative w-full p-4 rounded-2xl border-2 text-sm sm:text-base font-semibold transition-all duration-150 min-h-[56px] flex items-center justify-center text-center shadow-sm active:scale-98 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-900 ${stateStyles}`}
               >
                 <span className="hidden sm:inline-flex items-center justify-center w-6 h-6 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-500 text-xs font-mono font-bold absolute left-3.5">
                   {idx + 1}
