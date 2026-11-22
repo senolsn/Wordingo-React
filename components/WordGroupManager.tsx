@@ -13,7 +13,7 @@ import {
   Search,
   Star,
   Play,
-  RotateCcw
+  Pencil
 } from 'lucide-react';
 import { generateWordGroup } from '../services/geminiService';
 import { LanguageBadge } from './LanguageBadge';
@@ -31,6 +31,20 @@ interface WordGroupManagerProps {
 }
 
 const LEVELS = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'];
+
+const getLevelBadgeStyle = (level?: string) => {
+  const l = (level || '').toUpperCase();
+  if (l.includes('A1') || l.includes('A2')) {
+    return 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 border border-emerald-200/60 dark:border-emerald-800/50';
+  }
+  if (l.includes('B1') || l.includes('B2')) {
+    return 'bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 border border-blue-200/60 dark:border-blue-800/50';
+  }
+  if (l.includes('C1') || l.includes('C2')) {
+    return 'bg-purple-50 dark:bg-purple-950/40 text-purple-600 dark:text-purple-400 border border-purple-200/60 dark:border-purple-800/50';
+  }
+  return 'bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 border border-amber-200/60 dark:border-amber-800/50';
+};
 
 const WordGroupManager: React.FC<WordGroupManagerProps> = ({
   groups,
@@ -207,8 +221,6 @@ const WordGroupManager: React.FC<WordGroupManagerProps> = ({
     });
   }, [groups, searchQuery, selectedFilter]);
 
-  const recentGroup = groups.length > 0 ? groups[0] : null;
-
   return (
     <div className="min-h-screen pb-24 md:pb-16 safe-area-inset-bottom">
       {/* Top Search & Filter Bar */}
@@ -329,76 +341,12 @@ const WordGroupManager: React.FC<WordGroupManagerProps> = ({
           </div>
         </div>
 
-        {/* 1. RECENT DECK (Calm, solid blue card matching reference image) */}
-        {recentGroup && !searchQuery && selectedFilter === 'all' && (
-          <div>
-            <h2 className="text-sm font-semibold text-slate-500 dark:text-slate-400 mb-2.5 px-1">
-              Son Çalışılan
-            </h2>
-
-            <div className="rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 p-5 sm:p-6 shadow-sm hover:border-slate-300 dark:hover:border-slate-700 transition-all relative">
-              <div className="flex items-center justify-between mb-3">
-                <LanguageBadge fromLang="en" toLang="tr" variant="default" />
-                <div className="flex items-center gap-2">
-                  <span className="px-2 py-0.5 rounded-md text-xs font-semibold bg-blue-50 dark:bg-blue-950/50 text-blue-600 dark:text-blue-400 border border-blue-200/60 dark:border-blue-900/50">
-                    Son Çalışılan
-                  </span>
-                  <Star size={16} className="fill-amber-400 text-amber-400" />
-                </div>
-              </div>
-
-              <h3 className="text-lg sm:text-xl font-bold tracking-tight text-slate-900 dark:text-white mb-1">
-                {recentGroup.name}
-              </h3>
-              <p className="text-xs text-slate-500 dark:text-slate-400 mb-4">
-                {recentGroup.words.length} Kelime · {recentGroup.level} Seviyesi
-              </p>
-
-              <div className="flex items-center gap-2.5">
-                <button
-                  type="button"
-                  onClick={() => onStartQuiz(recentGroup)}
-                  disabled={recentGroup.words.length < 1}
-                  className={`flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-bold transition-all active:scale-98 min-h-[44px] ${
-                    recentGroup.words.length < 1
-                      ? 'bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-600 cursor-not-allowed'
-                      : 'bg-blue-600 hover:bg-blue-700 text-white shadow-sm shadow-blue-500/20'
-                  }`}
-                  title={recentGroup.words.length < 1 ? "Quiz başlatmak için desteye en az 1 kelime ekleyin" : "Hemen Quiz Başlat"}
-                  aria-label={`${recentGroup.name} destesinde hemen quiz başlat`}
-                >
-                  <Play size={13} className="fill-current" />
-                  <span>Hemen Quiz Başlat</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => onSelectGroup(recentGroup)}
-                  className="px-3.5 py-2.5 rounded-xl text-xs font-medium text-slate-700 dark:text-slate-300 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700/80 transition-colors min-h-[44px]"
-                  aria-label={`${recentGroup.name} kelimelerini incele`}
-                >
-                  Kelimeleri İncele
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* 2. ALL DECKS (Clean, calm list cards matching reference image) */}
+        {/* ALL DECKS (Clean, calm list cards matching reference image) */}
         <div>
-          <div className="flex items-center justify-between mb-2.5 px-1">
+          <div className="mb-2.5 px-1">
             <h2 className="text-sm font-semibold text-slate-500 dark:text-slate-400">
               {searchQuery ? `Arama Sonuçları (${filteredGroups.length})` : 'Tüm Desteler'}
             </h2>
-            {totalMistakes > 0 && onStartMistakesQuiz && (
-              <button
-                onClick={onStartMistakesQuiz}
-                className="inline-flex items-center gap-1 text-xs font-medium text-rose-500 hover:text-rose-600"
-              >
-                <RotateCcw size={12} />
-                <span>{totalMistakes} Hatalı Kelime</span>
-              </button>
-            )}
           </div>
 
           {filteredGroups.length === 0 ? (
@@ -425,65 +373,101 @@ const WordGroupManager: React.FC<WordGroupManagerProps> = ({
               {filteredGroups.map((group) => (
                 <div
                   key={group.id}
-                  className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/70 dark:border-slate-800 p-4 sm:p-5 shadow-sm hover:border-slate-300 dark:hover:border-slate-700 transition-all flex items-center justify-between gap-3 group"
+                  className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 p-3.5 sm:p-4 shadow-sm hover:shadow-md hover:border-slate-300 dark:hover:border-slate-700 transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3.5 group"
                 >
-                  <button
-                    type="button"
+                  {/* Left: Level Squircle Tile + Title & Metadata */}
+                  <div
                     onClick={() => onSelectGroup(group)}
-                    className="min-w-0 flex-1 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded-xl p-1"
+                    className="flex items-center gap-3 min-w-0 flex-1 cursor-pointer select-none"
+                    role="button"
+                    tabIndex={0}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        onSelectGroup(group);
+                      }
+                    }}
                     aria-label={`${group.name} destesini incele ve düzenle`}
                   >
-                    <div className="flex items-center gap-2 mb-1">
+                    {/* Deck Icon Tile */}
+                    <div
+                      className={`w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 shadow-sm ${getLevelBadgeStyle(
+                        group.level
+                      )}`}
+                      title={`Seviye: ${group.level || 'Mix'}`}
+                    >
+                      <BookOpen size={20} className="stroke-[2.2]" />
+                    </div>
+
+                    {/* Title & Metadata Line */}
+                    <div className="min-w-0 flex-1">
                       <h3 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white truncate group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
                         {group.name}
                       </h3>
-                      <span className="text-xs text-slate-500 dark:text-slate-400 font-mono">
-                        ({group.level})
-                      </span>
+
+                      <div className="flex items-center gap-2 mt-1 flex-wrap">
+                        <span className="text-xs font-semibold text-slate-600 dark:text-slate-300">
+                          {group.words.length} kelime
+                        </span>
+                        <span className="text-slate-300 dark:text-slate-700 text-xs">•</span>
+                        <span className="text-[11px] text-slate-400 dark:text-slate-500 font-medium">
+                          EN ➔ TR
+                        </span>
+                        {(group.perfect_completion_count ?? 0) > 0 && (
+                          <>
+                            <span className="text-slate-300 dark:text-slate-700 text-xs">•</span>
+                            <span
+                              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 border border-amber-200/60 dark:border-amber-900/50"
+                              title={`${group.perfect_completion_count} kez sıfır hatayla kusursuz tamamlandı`}
+                            >
+                              <Star size={11} className="fill-amber-400 text-amber-500" />
+                              <span>{group.perfect_completion_count}</span>
+                            </span>
+                          </>
+                        )}
+                      </div>
                     </div>
+                  </div>
 
-                    <div className="flex items-center gap-3">
-                      <LanguageBadge fromLang="en" toLang="tr" />
-                      <span className="text-xs text-slate-500 dark:text-slate-400">
-                        · {group.words.length} Kelime
-                      </span>
-                    </div>
-                  </button>
+                  {/* Right / Bottom on mobile: Balanced Actions */}
+                  <div className="flex items-center gap-2 shrink-0 justify-end pt-2 sm:pt-0 border-t sm:border-t-0 border-slate-100 dark:border-slate-800/80">
+                    {/* Düzenle (Edit) Button */}
+                    <button
+                      type="button"
+                      onClick={() => onSelectGroup(group)}
+                      className="flex-1 sm:flex-initial px-3.5 py-2 min-h-[40px] rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-200/60 dark:border-slate-700/60 transition-all active:scale-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+                      title="Desteyi ve Kelimeleri Düzenle"
+                      aria-label={`${group.name} destesini düzenle`}
+                    >
+                      <Pencil size={13} />
+                      <span>Düzenle</span>
+                    </button>
 
-                  {/* Actions on right */}
-                  <div className="flex items-center gap-2 shrink-0">
-                    {(group.perfect_completion_count ?? 0) > 0 ? (
-                      <span className="text-amber-500 flex items-center text-xs font-semibold gap-0.5">
-                        <Star size={14} className="fill-amber-400" />
-                        <span>{group.perfect_completion_count}</span>
-                      </span>
-                    ) : (
-                      <Star size={15} className="text-slate-300 dark:text-slate-700" />
-                    )}
-
+                    {/* Quiz Button */}
                     <button
                       type="button"
                       onClick={() => onStartQuiz(group)}
                       disabled={group.words.length < 1}
-                      className={`px-3.5 py-2 min-h-[44px] rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${
+                      className={`flex-1 sm:flex-initial px-4 py-2 min-h-[40px] rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${
                         group.words.length < 1
                           ? 'bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-600 cursor-not-allowed'
                           : 'bg-blue-600 hover:bg-blue-700 text-white shadow-sm shadow-blue-500/20 active:scale-95'
                       }`}
-                      title={group.words.length < 1 ? "Quiz başlatmak için desteye en az 1 kelime ekleyin" : "Quiz Başlat"}
+                      title={group.words.length < 1 ? "Quiz başlatmak için desteye kelime ekleyin" : "Quiz Başlat"}
                       aria-label={`${group.name} destesinde quiz başlat`}
                     >
                       <Play size={12} className="fill-current" />
                       <span>Quiz</span>
                     </button>
 
+                    {/* Delete Button */}
                     <button
                       type="button"
                       onClick={(e) => {
                         e.stopPropagation();
                         onDeleteGroup(group.id);
                       }}
-                      className="w-10 h-10 min-w-[40px] sm:min-w-[44px] sm:min-h-[44px] flex items-center justify-center text-slate-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-500"
+                      className="w-10 h-10 min-w-[40px] min-h-[40px] flex items-center justify-center text-slate-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-500 shrink-0"
                       title="Desteyi Sil"
                       aria-label={`${group.name} destesini sil`}
                     >

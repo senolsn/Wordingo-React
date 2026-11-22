@@ -14,6 +14,7 @@ import {
   Play
 } from 'lucide-react';
 import { prepareQuizData } from '../services/geminiService';
+import { speakEnglish } from '../services/ttsService';
 import usFlag from '../assets/us.svg';
 import trFlag from '../assets/tr.svg';
 
@@ -47,18 +48,9 @@ const Quiz: React.FC<QuizProps> = ({
 
   const [quizError, setQuizError] = useState<string | null>(null);
 
-  // Audio pronunciation helper
-  const speakEnglish = (text: string) => {
-    if (!('speechSynthesis' in window)) return;
-    try {
-      window.speechSynthesis.cancel();
-      const utterance = new SpeechSynthesisUtterance(text);
-      utterance.lang = 'en-US';
-      utterance.rate = 0.9;
-      window.speechSynthesis.speak(utterance);
-    } catch (e) {
-      console.warn('Speech error', e);
-    }
+  // Audio pronunciation helper using native English voice
+  const handleSpeak = (text: string) => {
+    speakEnglish(text);
   };
 
   // Start quiz when direction is selected
@@ -478,9 +470,9 @@ const Quiz: React.FC<QuizProps> = ({
             </h2>
             {isEnTarget && (
               <button
-                onClick={() => speakEnglish(targetText)}
+                onClick={() => handleSpeak(targetText)}
                 className="w-11 h-11 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-xl text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-slate-800 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
-                title="Telaffuzu Dinle"
+                title="İngilizce Telaffuzu Dinle"
                 aria-label="İngilizce Telaffuzu Dinle"
               >
                 <Volume2 size={22} />

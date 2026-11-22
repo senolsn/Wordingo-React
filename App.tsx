@@ -5,6 +5,7 @@ import WordGroupEditor from './components/WordGroupEditor';
 import Quiz from './components/Quiz';
 import { Auth } from './components/Auth';
 import { supabase } from './lib/supabaseClient';
+import { TTSAccent, getStoredAccent, setStoredAccent } from './services/ttsService';
 import {
   LogOut,
   Loader2,
@@ -132,6 +133,15 @@ const App: React.FC = () => {
       } catch {}
       return next;
     });
+  };
+
+  // TTS Accent State ('en-US' | 'en-GB')
+  const [ttsAccent, setTtsAccent] = useState<TTSAccent>(() => getStoredAccent());
+
+  const cycleTtsAccent = () => {
+    const next: TTSAccent = ttsAccent === 'en-US' ? 'en-GB' : 'en-US';
+    setTtsAccent(next);
+    setStoredAccent(next);
   };
 
   // Quiz Direction Preference State ('both' | 'en-to-tr' | 'tr-to-en')
@@ -1263,6 +1273,36 @@ const App: React.FC = () => {
                       </div>
                     </button>
 
+                    {/* Telaffuz Aksanı (US / UK) */}
+                    <button
+                      type="button"
+                      onClick={cycleTtsAccent}
+                      className="w-full p-3.5 sm:p-4 flex items-center justify-between gap-3 text-left hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors active:scale-[0.99] min-h-[52px]"
+                      aria-label="Telaffuz aksanını Amerikan veya İngiliz olarak değiştir"
+                    >
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div className="w-8 h-8 rounded-xl bg-violet-50 dark:bg-violet-950/40 text-violet-600 dark:text-violet-400 flex items-center justify-center shrink-0">
+                          <Volume2 size={16} />
+                        </div>
+                        <div className="min-w-0">
+                          <span className="text-xs sm:text-sm font-semibold text-slate-900 dark:text-white block">
+                            İngilizce Telaffuz Aksanı
+                          </span>
+                          <span className="text-xs text-slate-500 dark:text-slate-400">
+                            {ttsAccent === 'en-US'
+                              ? 'Doğal Amerikan İngilizcesi (US 🇺🇸) seslendirme'
+                              : 'Doğal İngiliz İngilizcesi (UK 🇬🇧) seslendirme'}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2 shrink-0">
+                        <span className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-violet-50 dark:bg-violet-950/40 text-violet-600 dark:text-violet-400 border border-violet-200/50 dark:border-violet-900/50">
+                          {ttsAccent === 'en-US' ? 'Amerikan 🇺🇸' : 'İngiliz 🇬🇧'}
+                        </span>
+                        <ChevronRight size={15} className="text-slate-400" />
+                      </div>
+                    </button>
+
                     {/* Çeviri Yönü (Gerçek Döngüsel Seçim) */}
                     <button
                       type="button"
@@ -1493,7 +1533,7 @@ const App: React.FC = () => {
             <div className="flex items-center justify-center relative">
               <button
                 onClick={handleBottomBarAddDeck}
-                className="relative -top-3.5 w-12 h-12 rounded-full bg-blue-600 hover:bg-blue-700 text-white shadow-xl shadow-blue-500/30 border-[3px] border-white dark:border-slate-900 flex items-center justify-center active:scale-90 transition-all z-10"
+                className="relative -top-3.5 w-12 h-12 rounded-full bg-blue-600 hover:bg-blue-700 text-white shadow-md border-[3px] border-white dark:border-slate-900 flex items-center justify-center active:scale-90 transition-all z-10"
                 title="Yeni Deste Ekle"
                 aria-label="Yeni Deste Ekle"
               >

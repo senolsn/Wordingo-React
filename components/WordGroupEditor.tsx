@@ -13,6 +13,7 @@ import {
   AlertCircle
 } from 'lucide-react';
 import { LanguageBadge } from './LanguageBadge';
+import { speakEnglish as playEnglishTTS } from '../services/ttsService';
 
 interface WordGroupEditorProps {
   group: WordGroup;
@@ -52,20 +53,12 @@ const WordGroupEditor: React.FC<WordGroupEditorProps> = ({
   }, [showAddForm]);
 
   const speakEnglish = (text: string) => {
-    if (!('speechSynthesis' in window)) return;
-    try {
-      window.speechSynthesis.cancel();
-      const utterance = new SpeechSynthesisUtterance(text);
-      utterance.lang = 'en-US';
-      utterance.rate = 0.9;
-      setPlayingWord(text);
-      utterance.onend = () => setPlayingWord(null);
-      utterance.onerror = () => setPlayingWord(null);
-      window.speechSynthesis.speak(utterance);
-    } catch (e) {
-      console.warn('Speech synthesis not available', e);
-      setPlayingWord(null);
-    }
+    setPlayingWord(text);
+    playEnglishTTS(text, {
+      onStart: () => setPlayingWord(text),
+      onEnd: () => setPlayingWord(null),
+      onError: () => setPlayingWord(null)
+    });
   };
 
   const handleAddWord = async () => {
