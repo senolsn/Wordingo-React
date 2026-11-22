@@ -5,7 +5,7 @@ import WordGroupEditor from './components/WordGroupEditor';
 import Quiz from './components/Quiz';
 import { Auth } from './components/Auth';
 import { supabase } from './lib/supabaseClient';
-import { LogOut, Loader2, Languages, Sparkles, Menu, X } from 'lucide-react';
+import { LogOut, Loader2, Languages, Sparkles, Menu, X, BookOpen, Flame, Trophy, Target, RotateCcw, Play, CheckCircle2 } from 'lucide-react';
 
 const App: React.FC = () => {
   const [session, setSession] = useState<any>(null);
@@ -177,6 +177,38 @@ const App: React.FC = () => {
     setView(ViewState.QUIZ);
   };
 
+  const handleQuickQuiz = () => {
+    const eligibleGroups = groups.filter(g => (g.words?.length || 0) >= 4);
+    if (eligibleGroups.length === 0) {
+      alert("Hızlı quiz başlatabilmek için en az 4 kelimelik bir gruba ihtiyacınız var.");
+      return;
+    }
+    const prioritized = eligibleGroups.find(g => (g.words || []).some(w => (w.wrong_count || 0) > 0)) || eligibleGroups[0];
+    handleStartQuiz(prioritized);
+  };
+
+  const handleStartMistakesQuiz = () => {
+    const allMistakeWords = groups.flatMap(g => (g.words || []).filter(w => (w.wrong_count || 0) > 0));
+    const uniqueMistakes = Array.from(new Map(allMistakeWords.map(w => [w.id, w])).values());
+    if (uniqueMistakes.length < 4) {
+      if (uniqueMistakes.length === 0) {
+        alert("Tebrikler! Şu an tekrar edilecek hiçbir hatalı kelimeniz bulunmuyor. 🎉");
+      } else {
+        alert(`Tekrar quiz'i için en az 4 hatalı kelime gereklidir. Şu anda kayıtlı ${uniqueMistakes.length} hatalı kelimeniz var.`);
+      }
+      return;
+    }
+    const mistakeGroup: WordGroup = {
+      id: 'mistakes-review',
+      name: '🎯 Hatalı Kelimeler Tekrarı',
+      description: 'Daha önce yanlış bilinen kelimelerden dinamik deste',
+      level: 'Mix',
+      words: uniqueMistakes,
+      createdAt: Date.now()
+    };
+    handleStartQuiz(mistakeGroup);
+  };
+
   // --- Editor Specific Actions ---
 
   const handleRenameGroup = async (newName: string) => {
@@ -289,98 +321,287 @@ const App: React.FC = () => {
     return <Auth />;
   }
 
+  const totalWords = groups.reduce((acc, g) => acc + (g.words?.length || 0), 0);
+  const totalMastery = groups.reduce((acc, g) => acc + (g.perfect_completion_count || 0), 0);
+  const totalMistakes = groups.reduce((acc, g) => acc + (g.words || []).filter(w => (w.wrong_count || 0) > 0).length, 0);
+  const dailyGoal = 20;
+  const dailyProgress = Math.min(totalWords, dailyGoal);
+  const goalPercentage = Math.round((dailyProgress / dailyGoal) * 100);
+  const streakDays = 3;
+  const userEmail = session?.user?.email || '';
+  const userInitial = userEmail ? userEmail.charAt(0).toUpperCase() : 'W';
+
   return (
     <div className="min-h-screen bg-zinc-950 text-zinc-100 font-sans antialiased">
       {/* Header only on non-quiz pages for immersive feel */}
       {view !== ViewState.QUIZ && (
-        <header className="bg-zinc-950/95 backdrop-blur-sm border-b border-zinc-800 sticky top-0 z-30 safe-area-inset-top">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between">
-            {/* Logo */}
-            <div className="flex items-center gap-3">
-              <div className="relative w-10 h-10 sm:w-11 sm:h-11 bg-gradient-to-br from-zinc-800 to-zinc-900 rounded-xl flex items-center justify-center text-white ring-1 ring-zinc-700">
-                <Languages size={20} />
-                <div className="absolute -bottom-0.5 -right-0.5 w-4 h-4 sm:w-5 sm:h-5 bg-zinc-800 border border-zinc-700 rounded-md flex items-center justify-center">
-                  <Sparkles size={10} className="text-zinc-200" />
+        <header className="bg-zinc-950/95 backdrop-blur-md border-b border-zinc-800/80 sticky top-0 z-30 safe-area-inset-top">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6">
+            <div className="h-16 flex items-center justify-between gap-3 sm:gap-4">
+              
+              {/* 1. Sol: Logo & Marka & Navigasyon Sekmeleri */}
+              <div className="flex items-center gap-4 sm:gap-6">
+                <button 
+                  onClick={() => setView(ViewState.DASHBOARD)}
+                  className="flex items-center gap-2.5 sm:gap-3 group text-left"
+                >
+                  <div className="relative w-9 h-9 sm:w-10 sm:h-10 bg-zinc-900 border border-zinc-700/80 rounded-xl flex items-center justify-center text-white transition-all group-hover:border-zinc-500 shadow-sm">
+                    <Languages size={18} className="text-zinc-100" />
+                    <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-zinc-800 border border-zinc-600 rounded-md flex items-center justify-center">
+                      <Sparkles size={8} className="text-zinc-300" />
+                    </div>
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-1.5">
+                      <h1 className="text-sm sm:text-base font-bold text-white tracking-tight group-hover:text-zinc-200 transition-colors">
+                        Wordingo
+                      </h1>
+                      <span className="px-1.5 py-0.5 text-xs font-semibold uppercase tracking-wider rounded bg-zinc-800 text-zinc-400 border border-zinc-700/60">
+                        STUDY
+                      </span>
+                    </div>
+                    <p className="text-xs text-zinc-400 hidden lg:block">AI Vocabulary Master</p>
+                  </div>
+                </button>
+
+                {/* Masaüstü Navigasyon Sekmeleri */}
+                <nav className="hidden md:flex items-center gap-1 bg-zinc-900/60 border border-zinc-800/80 p-1 rounded-xl">
+                  <button
+                    onClick={() => setView(ViewState.DASHBOARD)}
+                    className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                      view === ViewState.DASHBOARD
+                        ? 'bg-zinc-800 text-white shadow-sm'
+                        : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/50'
+                    }`}
+                  >
+                    <BookOpen size={14} />
+                    <span>Kütüphane</span>
+                    <span className="text-xs px-1.5 py-0.5 rounded-full bg-zinc-800 text-zinc-400 font-mono">
+                      {groups.length}
+                    </span>
+                  </button>
+
+                  <button
+                    onClick={handleStartMistakesQuiz}
+                    className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                      totalMistakes > 0
+                        ? 'text-rose-400 hover:bg-rose-500/10'
+                        : 'text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800/50'
+                    }`}
+                    title={totalMistakes > 0 ? `${totalMistakes} hatalı kelimeyi pratik et` : 'Hatalı kelime yok'}
+                  >
+                    <RotateCcw size={14} className={totalMistakes > 0 ? 'text-rose-400' : 'text-zinc-500'} />
+                    <span>Hatalarım</span>
+                    {totalMistakes > 0 && (
+                      <span className="text-xs px-1.5 py-0.5 rounded-full bg-rose-500/15 text-rose-400 border border-rose-500/30 font-bold">
+                        {totalMistakes}
+                      </span>
+                    )}
+                  </button>
+                </nav>
+              </div>
+
+              {/* 2. Orta: Motivasyon & Metrik Kapsülü (Duolingo / Elevate) */}
+              <div className="flex items-center gap-1.5 sm:gap-2.5">
+                {/* Streak (Çalışma Serisi) */}
+                <div 
+                  className="flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl bg-zinc-900/90 border border-zinc-800/80 text-amber-400 font-semibold text-xs transition-colors hover:border-amber-500/30 cursor-default"
+                  title="Günlük Çalışma Serisi: 3 Gün"
+                >
+                  <Flame size={15} className="fill-amber-400/20 text-amber-400" />
+                  <span className="font-bold">{streakDays}</span>
+                  <span className="hidden sm:inline text-zinc-400 font-normal text-xs">Seri</span>
+                </div>
+
+                {/* Mastery Stars (Ustalık) */}
+                <div 
+                  className="flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl bg-zinc-900/90 border border-zinc-800/80 text-emerald-400 font-semibold text-xs transition-colors hover:border-emerald-500/30 cursor-default"
+                  title="Tamamlanan Mükemmel Quizler"
+                >
+                  <Trophy size={14} className="text-emerald-400" />
+                  <span className="font-bold">{totalMastery}</span>
+                  <span className="hidden sm:inline text-zinc-400 font-normal text-xs">Ustalık</span>
+                </div>
+
+                {/* Günlük Hedef (Daily Goal) */}
+                <div 
+                  className="hidden xl:flex items-center gap-2.5 px-3 py-1.5 rounded-xl bg-zinc-900/90 border border-zinc-800/80 text-xs cursor-default"
+                  title="Günlük Kelime Hedefi: 20 Kelime"
+                >
+                  <div className="flex flex-col gap-1">
+                    <div className="flex items-center justify-between gap-3 text-xs">
+                      <span className="text-zinc-400 flex items-center gap-1">
+                        <Target size={11} className="text-zinc-300" /> Hedef
+                      </span>
+                      <span className="font-mono text-zinc-300 font-medium">{dailyProgress}/{dailyGoal}</span>
+                    </div>
+                    <div className="w-20 h-1.5 bg-zinc-800 rounded-full overflow-hidden">
+                      <div 
+                        className="h-full bg-zinc-100 rounded-full transition-all duration-500"
+                        style={{ width: `${goalPercentage}%` }}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Toplam Kelime Sayacı */}
+                <div className="hidden lg:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-zinc-900/50 border border-zinc-800 text-zinc-300 text-xs">
+                  <BookOpen size={13} className="text-zinc-400" />
+                  <span className="font-bold text-white">{totalWords}</span>
+                  <span className="text-zinc-400 text-xs">Kelime</span>
                 </div>
               </div>
-              <div className="hidden sm:block">
-                <h1 className="text-base font-bold text-white tracking-tight">
-                  Wordingo
-                </h1>
-                <p className="text-xs text-zinc-500">AI Vocabulary App</p>
+
+              {/* 3. Sağ: Hızlı Quiz Butonu & Profil / Menü */}
+              <div className="flex items-center gap-2 sm:gap-3">
+                {/* Hızlı Quiz Butonu */}
+                {groups.some(g => (g.words?.length || 0) >= 4) && (
+                  <button
+                    onClick={handleQuickQuiz}
+                    className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 rounded-xl bg-white text-zinc-950 font-semibold text-xs sm:text-sm hover:bg-zinc-200 transition-all active:scale-[0.97] shadow-sm haptic-feedback"
+                    title="Hemen bir quiz başlat"
+                  >
+                    <Play size={13} className="fill-zinc-950" />
+                    <span>Hızlı Quiz</span>
+                  </button>
+                )}
+
+                {/* Profil & Menü Butonu */}
+                <div className="flex items-center gap-1.5 pl-2 border-l border-zinc-800">
+                  <div 
+                    onClick={() => setShowMobileMenu(true)}
+                    className="w-9 h-9 rounded-xl bg-zinc-900 border border-zinc-700/80 flex items-center justify-center text-xs font-bold text-zinc-200 cursor-pointer hover:border-zinc-500 transition-colors"
+                    title={userEmail}
+                  >
+                    {userInitial}
+                  </div>
+                  <button
+                    onClick={handleLogout}
+                    className="hidden lg:flex items-center justify-center w-9 h-9 rounded-xl text-zinc-400 hover:text-white hover:bg-zinc-900 transition-colors"
+                    title="Güvenli Çıkış"
+                  >
+                    <LogOut size={16} />
+                  </button>
+                  <button
+                    onClick={() => setShowMobileMenu(true)}
+                    className="md:hidden p-1.5 text-zinc-400 hover:text-white haptic-feedback"
+                  >
+                    <Menu size={20} />
+                  </button>
+                </div>
+
               </div>
-            </div>
 
-            {/* Desktop User Info */}
-            <div className="hidden sm:flex items-center gap-4">
-              <span className="text-sm text-zinc-500 truncate max-w-[200px]">
-                {session?.user?.email}
-              </span>
-              <button
-                onClick={handleLogout}
-                className="text-sm text-zinc-400 hover:text-white flex items-center gap-2 transition-colors px-3 py-2 rounded-lg hover:bg-zinc-900"
-              >
-                <LogOut size={16} />
-                <span>Çıkış</span>
-              </button>
             </div>
-
-            {/* Mobile Menu Button */}
-            <button
-              onClick={() => setShowMobileMenu(true)}
-              className="sm:hidden p-2 -mr-2 text-zinc-400 active:text-white haptic-feedback"
-            >
-              <Menu size={24} />
-            </button>
           </div>
         </header>
       )}
 
-      {/* Mobile Menu Overlay */}
+      {/* Mobile Drawer & Motivation Hub */}
       {showMobileMenu && (
-        <div className="sm:hidden fixed inset-0 z-50 flex">
+        <div className="fixed inset-0 z-50 flex">
           <div
             className="absolute inset-0 bg-black/80 backdrop-blur-sm animate-fade-in"
             onClick={() => setShowMobileMenu(false)}
           />
-          <div className="ml-auto w-[280px] bg-zinc-900 border-l border-zinc-800 relative animate-slide-left flex flex-col safe-area-inset-top safe-area-inset-bottom">
+          <div className="ml-auto w-full max-w-xs bg-zinc-900 border-l border-zinc-800 relative animate-slide-left flex flex-col safe-area-inset-top safe-area-inset-bottom">
             <div className="flex items-center justify-between p-4 border-b border-zinc-800">
-              <span className="font-semibold text-white">Menü</span>
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-lg bg-zinc-800 border border-zinc-700 flex items-center justify-center text-xs font-bold text-white">
+                  {userInitial}
+                </div>
+                <div>
+                  <span className="font-semibold text-white text-sm block">Öğrenci Profili</span>
+                  <span className="text-xs text-zinc-400 block truncate max-w-[170px]">{userEmail}</span>
+                </div>
+              </div>
               <button
                 onClick={() => setShowMobileMenu(false)}
-                className="p-2 -mr-2 text-zinc-400 active:text-white haptic-feedback"
+                className="p-2 text-zinc-400 hover:text-white"
               >
                 <X size={20} />
               </button>
             </div>
 
-            <div className="flex-1 p-4">
-              <div className="bg-zinc-800/50 rounded-xl p-4 mb-4">
-                <p className="text-xs text-zinc-500 mb-1">Giriş yapıldı:</p>
-                <p className="text-sm text-zinc-200 truncate">{session?.user?.email}</p>
-              </div>
-
-              <div className="space-y-2">
-                <div className="text-xs text-zinc-500 uppercase tracking-wider px-2 mb-2">İstatistikler</div>
-                <div className="bg-zinc-800/50 rounded-xl p-4 flex items-center gap-3">
-                  <div className="w-10 h-10 bg-zinc-700 rounded-lg flex items-center justify-center">
-                    <span className="text-lg">📚</span>
+            <div className="flex-1 p-4 overflow-y-auto space-y-4">
+              {/* Motivasyon Kartları */}
+              <div>
+                <div className="text-xs font-semibold text-zinc-400 uppercase tracking-wider px-1 mb-2.5">
+                  Öğrenme İstatistikleri
+                </div>
+                <div className="grid grid-cols-2 gap-2.5">
+                  <div className="bg-zinc-950/70 border border-zinc-800 p-3 rounded-xl text-center">
+                    <div className="flex items-center justify-center gap-1 text-amber-400 mb-1">
+                      <Flame size={16} className="fill-amber-400/20" />
+                      <span className="text-lg font-bold">{streakDays}</span>
+                    </div>
+                    <span className="text-xs text-zinc-400">Günlük Seri</span>
                   </div>
-                  <div>
-                    <p className="text-xl font-bold text-white">{groups.length}</p>
-                    <p className="text-xs text-zinc-500">Kelime Grubu</p>
+                  <div className="bg-zinc-950/70 border border-zinc-800 p-3 rounded-xl text-center">
+                    <div className="flex items-center justify-center gap-1 text-emerald-400 mb-1">
+                      <Trophy size={16} />
+                      <span className="text-lg font-bold">{totalMastery}</span>
+                    </div>
+                    <span className="text-xs text-zinc-400">Mükemmel Quiz</span>
+                  </div>
+                  <div className="bg-zinc-950/70 border border-zinc-800 p-3 rounded-xl text-center">
+                    <div className="text-lg font-bold text-white mb-0.5">{totalWords}</div>
+                    <span className="text-xs text-zinc-400">Toplam Kelime</span>
+                  </div>
+                  <div className="bg-zinc-950/70 border border-zinc-800 p-3 rounded-xl text-center">
+                    <div className="text-lg font-bold text-rose-400 mb-0.5">{totalMistakes}</div>
+                    <span className="text-xs text-zinc-400">Tekrar Bekleyen</span>
                   </div>
                 </div>
-                <div className="bg-zinc-800/50 rounded-xl p-4 flex items-center gap-3">
-                  <div className="w-10 h-10 bg-zinc-700 rounded-lg flex items-center justify-center">
-                    <span className="text-lg">🔤</span>
-                  </div>
-                  <div>
-                    <p className="text-xl font-bold text-white">
-                      {groups.reduce((acc, g) => acc + g.words.length, 0)}
-                    </p>
-                    <p className="text-xs text-zinc-500">Toplam Kelime</p>
-                  </div>
+              </div>
+
+              {/* Hızlı Eylemler */}
+              <div>
+                <div className="text-xs font-semibold text-zinc-400 uppercase tracking-wider px-1 mb-2.5">
+                  Hızlı Eylemler
+                </div>
+                <div className="space-y-2">
+                  <button
+                    onClick={() => {
+                      setShowMobileMenu(false);
+                      handleQuickQuiz();
+                    }}
+                    className="w-full flex items-center justify-between p-3 rounded-xl bg-white text-zinc-950 font-semibold text-sm active:scale-[0.98] transition-all"
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <Play size={16} className="fill-zinc-950" />
+                      <span>Hemen Quiz Başlat</span>
+                    </div>
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      setShowMobileMenu(false);
+                      handleStartMistakesQuiz();
+                    }}
+                    className="w-full flex items-center justify-between p-3 rounded-xl bg-zinc-950 border border-zinc-800 text-zinc-200 text-sm active:scale-[0.98] transition-all hover:border-zinc-700"
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <RotateCcw size={16} className={totalMistakes > 0 ? 'text-rose-400' : 'text-zinc-500'} />
+                      <span>Hataları Tekrar Et</span>
+                    </div>
+                    {totalMistakes > 0 && (
+                      <span className="px-2 py-0.5 text-xs font-bold rounded-full bg-rose-500/20 text-rose-400 border border-rose-500/30">
+                        {totalMistakes}
+                      </span>
+                    )}
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      setShowMobileMenu(false);
+                      setView(ViewState.DASHBOARD);
+                    }}
+                    className="w-full flex items-center gap-2.5 p-3 rounded-xl bg-zinc-950 border border-zinc-800 text-zinc-200 text-sm active:scale-[0.98] transition-all hover:border-zinc-700"
+                  >
+                    <BookOpen size={16} className="text-zinc-400" />
+                    <span>Kütüphaneye Dön</span>
+                  </button>
                 </div>
               </div>
             </div>
@@ -388,9 +609,9 @@ const App: React.FC = () => {
             <div className="p-4 border-t border-zinc-800">
               <button
                 onClick={handleLogout}
-                className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-zinc-800 text-red-400 font-medium active:bg-zinc-700 transition-colors haptic-feedback"
+                className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-zinc-800/80 border border-zinc-700/60 text-red-400 font-medium active:bg-zinc-700 transition-colors haptic-feedback text-sm"
               >
-                <LogOut size={18} />
+                <LogOut size={16} />
                 Çıkış Yap
               </button>
             </div>
