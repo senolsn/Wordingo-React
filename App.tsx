@@ -3,6 +3,7 @@ import { WordGroup, ViewState, Word, UserProfile } from './types';
 import WordGroupManager from './components/WordGroupManager';
 import WordGroupEditor from './components/WordGroupEditor';
 import Quiz from './components/Quiz';
+import FlashcardPractice from './components/FlashcardPractice';
 import { Auth } from './components/Auth';
 import { supabase } from './lib/supabaseClient';
 import { TTSAccent, getStoredAccent, setStoredAccent } from './services/ttsService';
@@ -460,6 +461,11 @@ const App: React.FC = () => {
     setView(ViewState.QUIZ);
   };
 
+  const handleStartFlashcard = (group: WordGroup) => {
+    setActiveGroup(group);
+    setView(ViewState.FLASHCARD);
+  };
+
   const handleQuickQuiz = () => {
     const eligibleGroups = groups.filter((g) => (g.words?.length || 0) >= 4);
     if (eligibleGroups.length === 0) {
@@ -704,7 +710,7 @@ const App: React.FC = () => {
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white font-sans antialiased">
       {/* Top Header - Visible on all non-quiz pages */}
-      {view !== ViewState.QUIZ && (
+      {view !== ViewState.QUIZ && view !== ViewState.FLASHCARD && (
         <header className="bg-white/85 dark:bg-slate-900/85 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800/80 sticky top-0 z-30 safe-area-inset-top transition-colors">
           <div className="max-w-7xl mx-auto px-4 sm:px-6">
             <div className="h-16 flex items-center justify-between gap-3 sm:gap-4">
@@ -835,6 +841,7 @@ const App: React.FC = () => {
                 onDeleteGroup={handleDeleteGroup}
                 onSelectGroup={handleSelectGroup}
                 onStartQuiz={handleStartQuiz}
+                onStartFlashcard={handleStartFlashcard}
                 onStartMistakesQuiz={handleStartMistakesQuiz}
                 totalMistakes={totalMistakes}
                 isAddDeckOpen={isAddDeckModalOpen}
@@ -1012,6 +1019,14 @@ const App: React.FC = () => {
                 onUpdateMistakes={handleUpdateMistakes}
                 onPerfectCompletion={() => handlePerfectCompletion(activeGroup.id)}
                 onRecordStudyTime={handleRecordStudyTime}
+              />
+            )}
+
+            {view === ViewState.FLASHCARD && activeGroup && (
+              <FlashcardPractice
+                group={activeGroup}
+                onExit={() => setView(ViewState.DECKS)}
+                onStartQuiz={() => handleStartQuiz(activeGroup)}
               />
             )}
 

@@ -13,7 +13,8 @@ import {
   Search,
   Star,
   Play,
-  Pencil
+  Pencil,
+  AlertCircle
 } from 'lucide-react';
 import { generateWordGroup } from '../services/geminiService';
 import { LanguageBadge } from './LanguageBadge';
@@ -24,6 +25,7 @@ interface WordGroupManagerProps {
   onDeleteGroup: (id: string) => void;
   onCreateGroup: (group: WordGroup) => void;
   onStartQuiz: (group: WordGroup) => void;
+  onStartFlashcard: (group: WordGroup) => void;
   onStartMistakesQuiz?: () => void;
   totalMistakes?: number;
   isAddDeckOpen?: boolean;
@@ -52,6 +54,7 @@ const WordGroupManager: React.FC<WordGroupManagerProps> = ({
   onDeleteGroup,
   onCreateGroup,
   onStartQuiz,
+  onStartFlashcard,
   onStartMistakesQuiz,
   totalMistakes = 0,
   isAddDeckOpen = false,
@@ -441,6 +444,23 @@ const WordGroupManager: React.FC<WordGroupManagerProps> = ({
                     >
                       <Pencil size={13} />
                       <span>Düzenle</span>
+                    </button>
+
+                    {/* Flashcard Practice Button */}
+                    <button
+                      type="button"
+                      onClick={() => onStartFlashcard(group)}
+                      disabled={group.words.length < 1}
+                      className={`flex-1 sm:flex-initial px-3.5 py-2 min-h-[40px] rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${
+                        group.words.length < 1
+                          ? 'bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-600 cursor-not-allowed'
+                          : 'bg-blue-50 dark:bg-blue-950/40 hover:bg-blue-100 dark:hover:bg-blue-900/40 text-blue-700 dark:text-blue-400 border border-blue-200/60 dark:border-blue-800/60 active:scale-95'
+                      }`}
+                      title={group.words.length < 1 ? "Pratik için desteye kelime ekleyin" : "Kelime Kartı Pratiği"}
+                      aria-label={`${group.name} destesinde flashcard pratiği başlat`}
+                    >
+                      <BookOpen size={13} />
+                      <span>Pratik</span>
                     </button>
 
                     {/* Quiz Button */}
