@@ -1,8 +1,32 @@
 import { GoogleGenAI, Type, Schema } from "@google/genai";
 import { Word, QuizQuestion, QuizDirection } from '../types';
 
-const apiKey = process.env.GEMINI_API_KEY || '';
-const ai = new GoogleGenAI({ apiKey });
+const getApiKey = (): string => {
+  try {
+    return (
+      (typeof process !== 'undefined' && process.env?.GEMINI_API_KEY) ||
+      (typeof process !== 'undefined' && process.env?.API_KEY) ||
+      (import.meta as any)?.env?.VITE_GEMINI_API_KEY ||
+      ''
+    );
+  } catch {
+    return '';
+  }
+};
+
+const apiKey = getApiKey();
+
+let aiInstance: GoogleGenAI | null = null;
+const getAI = () => {
+  if (!aiInstance && apiKey) {
+    try {
+      aiInstance = new GoogleGenAI({ apiKey });
+    } catch (e) {
+      console.warn("Failed to initialize GoogleGenAI:", e);
+    }
+  }
+  return aiInstance;
+};
 
 // Helper to generate a unique ID
 const generateId = () => Math.random().toString(36).substr(2, 9);
@@ -14,7 +38,10 @@ const capitalize = (str: string) => {
 };
 
 export const generateWordGroup = async (topic: string, level: string, count: number = 10): Promise<Word[]> => {
-  if (!apiKey) throw new Error("API Key is missing");
+  const ai = getAI();
+  if (!apiKey || !ai) {
+    throw new Error("Yapay zeka ile kelime grubu oluşturmak için GEMINI_API_KEY gereklidir. Lütfen GitHub Secrets veya .env ayarlarınızı kontrol edin.");
+  }
 
   const modelId = "gemini-2.5-flash";
 
@@ -68,10 +95,16 @@ export const generateWordGroup = async (topic: string, level: string, count: num
  * @param direction - Quiz direction: 'tr-to-en' (show Turkish, answer English) or 'en-to-tr' (show English, answer Turkish)
  */
 export const prepareQuizData = async (words: Word[], direction: QuizDirection = 'tr-to-en'): Promise<QuizQuestion[]> => {
-  if (!apiKey) throw new Error("API Key is missing");
-
   // Limit to 20 words max for a single quiz session to keep generation fast and reliable
   const selectedWords = words.sort(() => 0.5 - Math.random()).slice(0, 20);
+
+  const ai = getAI();
+  // If API key is missing or AI client is not available, immediately use smart offline fallback without crashing!
+  if (!apiKey || !ai) {
+    console.info("Gemini API key is not present or AI is unavailable, generating quiz questions with offline distractor bank.");
+    return fallbackGeneration(selectedWords, direction);
+  }
+
   const modelId = "gemini-2.5-flash";
 
   const responseSchema: Schema = {
