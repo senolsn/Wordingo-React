@@ -6,21 +6,21 @@
     "colorMeta": {
       "primary": {
         "role": "primary",
-        "displayName": "Zinc Light",
-        "canonical": "#fafafa",
-        "tonalRamp": ["#ffffff", "#fafafa", "#e4e4e7", "#d4d4d8", "#a1a1aa"]
+        "displayName": "Royal Blue",
+        "canonical": "#2563eb",
+        "tonalRamp": ["#eff6ff", "#dbeafe", "#3b82f6", "#2563eb", "#1d4ed8"]
       },
       "neutral-bg": {
         "role": "neutral",
-        "displayName": "Deep Void Canvas",
-        "canonical": "#09090b",
-        "tonalRamp": ["#18181b", "#121215", "#09090b", "#050507", "#000000"]
+        "displayName": "Slate Light & Dark Canvas",
+        "canonical": "#f4f7fb",
+        "tonalRamp": ["#ffffff", "#f8fafc", "#f4f7fb", "#131b2e", "#0b0f19"]
       },
       "surface": {
         "role": "neutral",
-        "displayName": "Surface Elevation",
-        "canonical": "#18181b",
-        "tonalRamp": ["#27272a", "#1f1f23", "#18181b", "#121215", "#09090b"]
+        "displayName": "Surface Card",
+        "canonical": "#ffffff",
+        "tonalRamp": ["#ffffff", "#f8fafc", "#e2e8f0", "#1e293b", "#131b2e"]
       },
       "surface-elevated": {
         "role": "neutral",

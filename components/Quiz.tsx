@@ -1,42 +1,80 @@
 import React, { useState, useEffect } from 'react';
 import { WordGroup, QuizQuestion, WrongAnswer, QuizDirection } from '../types';
-import { ArrowLeft, Check, X, Loader2, Trophy, AlertCircle, Languages, ArrowRight, ChevronUp, RotateCcw } from 'lucide-react';
+import {
+  ArrowLeft,
+  Check,
+  X,
+  Loader2,
+  Trophy,
+  AlertCircle,
+  ArrowRight,
+  RotateCcw,
+  Volume2,
+  Star,
+  Play
+} from 'lucide-react';
 import { prepareQuizData } from '../services/geminiService';
+import usFlag from '../assets/us.svg';
+import trFlag from '../assets/tr.svg';
 
 interface QuizProps {
   group: WordGroup;
   onExit: () => void;
   onUpdateMistakes?: (wordIds: string[]) => void;
   onPerfectCompletion?: () => void;
+  onRecordStudyTime?: (minutes: number) => void;
 }
 
-const Quiz: React.FC<QuizProps> = ({ group, onExit, onUpdateMistakes, onPerfectCompletion }) => {
+const Quiz: React.FC<QuizProps> = ({
+  group,
+  onExit,
+  onUpdateMistakes,
+  onPerfectCompletion,
+  onRecordStudyTime
+}) => {
   const [questions, setQuestions] = useState<QuizQuestion[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [loadingState, setLoadingState] = useState<'direction-select' | 'generating' | 'ready'>('direction-select');
   const [quizDirection, setQuizDirection] = useState<QuizDirection | null>(null);
+  const [quizStartTime, setQuizStartTime] = useState<number>(Date.now());
 
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
   const [isCorrect, setIsCorrect] = useState<boolean | null>(null);
   const [wrongAnswers, setWrongAnswers] = useState<WrongAnswer[]>([]);
   const [score, setScore] = useState(0);
   const [finished, setFinished] = useState(false);
-
-  // Mobile wrong answers panel
   const [showWrongPanel, setShowWrongPanel] = useState(false);
+
+  const [quizError, setQuizError] = useState<string | null>(null);
+
+  // Audio pronunciation helper
+  const speakEnglish = (text: string) => {
+    if (!('speechSynthesis' in window)) return;
+    try {
+      window.speechSynthesis.cancel();
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = 'en-US';
+      utterance.rate = 0.9;
+      window.speechSynthesis.speak(utterance);
+    } catch (e) {
+      console.warn('Speech error', e);
+    }
+  };
 
   // Start quiz when direction is selected
   const startQuiz = async (direction: QuizDirection) => {
     setQuizDirection(direction);
     setLoadingState('generating');
+    setQuizStartTime(Date.now());
+    setQuizError(null);
     try {
       const generatedQuestions = await prepareQuizData(group.words, direction);
       setQuestions(generatedQuestions);
       setLoadingState('ready');
     } catch (error) {
       console.error("Failed to prepare quiz", error);
-      alert("Quiz başlatılırken hata oluştu.");
-      onExit();
+      setQuizError("Quiz hazırlanırken bir sorun oluştu. Lütfen tekrar deneyin.");
+      setLoadingState('direction-select');
     }
   };
 
@@ -51,7 +89,6 @@ const Quiz: React.FC<QuizProps> = ({ group, onExit, onUpdateMistakes, onPerfectC
       }
 
       if (selectedOption !== null) {
-        // If answered and was wrong, Space or Enter advances
         if (!isCorrect && (e.key === 'Enter' || e.key === ' ')) {
           e.preventDefault();
           handleNext(wrongAnswers);
@@ -59,7 +96,6 @@ const Quiz: React.FC<QuizProps> = ({ group, onExit, onUpdateMistakes, onPerfectC
         return;
       }
 
-      // Keys 1, 2, 3, 4
       const num = parseInt(e.key, 10);
       if (num >= 1 && num <= 4) {
         const currentOpts = questions[currentIndex]?.options;
@@ -75,18 +111,17 @@ const Quiz: React.FC<QuizProps> = ({ group, onExit, onUpdateMistakes, onPerfectC
   }, [loadingState, finished, selectedOption, isCorrect, currentIndex, questions, wrongAnswers]);
 
   const handleOptionClick = (option: string) => {
-    if (selectedOption) return; // Prevent double click
+    if (selectedOption) return;
 
     const currentQuestion = questions[currentIndex];
     setSelectedOption(option);
 
     if (option === currentQuestion.correctOption) {
       setIsCorrect(true);
-      setScore(s => s + 1);
-      // Doğru cevapta akıcı ve hızlı geçiş (600ms)
+      setScore((s) => s + 1);
       setTimeout(() => {
         handleNext(wrongAnswers);
-      }, 600);
+      }, 550);
     } else {
       setIsCorrect(false);
       const wrongItem: WrongAnswer = {
@@ -94,123 +129,130 @@ const Quiz: React.FC<QuizProps> = ({ group, onExit, onUpdateMistakes, onPerfectC
         userAnswer: option,
         correctAnswer: currentQuestion.correctOption
       };
-      setWrongAnswers(prev => [wrongItem, ...prev]);
-      // Yanlış cevapta otomatik geçiş durduruldu; öğrenci inceleyip "Devam Et" butonuna basar!
+      setWrongAnswers((prev) => [wrongItem, ...prev]);
     }
   };
 
-  const handleNext = (finalWrongAnswers: WrongAnswer[]) => {
-    setSelectedOption(null);
-    setIsCorrect(null);
-
+  const handleNext = (currentWrongAnswers: WrongAnswer[]) => {
     if (currentIndex < questions.length - 1) {
-      setCurrentIndex(c => c + 1);
+      setCurrentIndex((prev) => prev + 1);
+      setSelectedOption(null);
+      setIsCorrect(null);
     } else {
       setFinished(true);
 
-      // Analytics for Supabase
-      if (finalWrongAnswers.length === 0) {
-        onPerfectCompletion?.();
-      } else {
-        const uniqueIds = Array.from(new Set(finalWrongAnswers.map(w => w.word.id)));
-        onUpdateMistakes?.(uniqueIds);
+      const uniqueWrongWordIds = Array.from(new Set(currentWrongAnswers.map((w) => w.word.id)));
+      if (onUpdateMistakes) {
+        onUpdateMistakes(uniqueWrongWordIds);
+      }
+
+      if (currentWrongAnswers.length === 0 && onPerfectCompletion) {
+        onPerfectCompletion();
+      }
+
+      if (onRecordStudyTime) {
+        const minutes = Math.max(1, Math.round((Date.now() - quizStartTime) / 60000));
+        onRecordStudyTime(minutes);
       }
     }
   };
 
-  const retryWrongWords = async () => {
+  const retryWrongWords = () => {
     if (wrongAnswers.length === 0) return;
-    const missedWords = Array.from(
-      new Map(wrongAnswers.map(wa => [wa.word.id, wa.word])).values()
-    );
-    setLoadingState('generating');
-    setFinished(false);
-    setScore(0);
+    const uniqueWrongWords = Array.from(new Map(wrongAnswers.map((wa) => [wa.word.id, wa.word])).values());
+    const direction = quizDirection || 'en-to-tr';
+    setQuestions([]);
     setCurrentIndex(0);
+    setScore(0);
     setWrongAnswers([]);
+    setFinished(false);
     setSelectedOption(null);
     setIsCorrect(null);
-    try {
-      const generated = await prepareQuizData(missedWords, quizDirection || 'tr-to-en');
-      setQuestions(generated);
-      setLoadingState('ready');
-    } catch (err) {
-      console.error("Hataları tekrarlama hatası:", err);
-      alert("Hataları tekrarlama hazırlanırken hata oluştu.");
-      onExit();
-    }
+    setShowWrongPanel(false);
+    setLoadingState('generating');
+
+    prepareQuizData(uniqueWrongWords, direction)
+      .then((newQuestions) => {
+        setQuestions(newQuestions);
+        setLoadingState('ready');
+      })
+      .catch((err) => {
+        console.error("Retry failed", err);
+        setQuizError("Tekrar soruları yüklenirken bir sorun oluştu.");
+        setLoadingState('direction-select');
+      });
   };
 
-  // Direction selection screen - MOBILE OPTIMIZED
+  // Direction Select Screen
   if (loadingState === 'direction-select') {
     return (
-      <div className="full-height-mobile flex flex-col bg-zinc-950 text-zinc-100 safe-area-inset-top safe-area-inset-bottom">
-        {/* Header */}
-        <div className="flex items-center justify-between px-4 py-3 border-b border-zinc-800">
+      <div className="min-h-screen flex flex-col bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 safe-area-inset-top safe-area-inset-bottom">
+        <div className="flex items-center px-4 py-3 border-b border-slate-200/80 dark:border-slate-800/80 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md">
           <button
             onClick={onExit}
-            className="flex items-center justify-center w-10 h-10 rounded-xl bg-zinc-900 text-zinc-400 hover:text-white transition-colors haptic-feedback"
+            className="flex items-center justify-center w-11 h-11 rounded-2xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+            title="Geri Dön"
+            aria-label="Destelere geri dön"
           >
-            <ArrowLeft size={20} />
+            <ArrowLeft size={18} />
           </button>
-          <span className="text-sm font-medium text-zinc-400">{group.name}</span>
-          <div className="w-10" /> {/* Spacer for centering */}
+          <span className="font-bold text-sm text-slate-900 dark:text-white mx-auto pr-11">
+            Quiz Yönü Seçin
+          </span>
         </div>
 
-        {/* Content */}
-        <div className="flex-1 flex flex-col items-center justify-center px-5 py-8 animate-slide-up">
-          <div className="w-20 h-20 bg-zinc-900 border border-zinc-800 text-zinc-100 rounded-2xl flex items-center justify-center mb-8">
-            <Languages size={40} />
+        <div className="flex-1 flex flex-col justify-center px-4 sm:px-6 max-w-md mx-auto w-full py-8 pb-28 md:py-8">
+          {quizError && (
+            <div className="mb-5 p-4 rounded-2xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/50 flex items-center gap-3 text-rose-600 dark:text-rose-400 text-xs animate-shake">
+              <AlertCircle size={18} className="shrink-0" />
+              <span>{quizError}</span>
+            </div>
+          )}
+
+          <div className="text-center mb-8">
+            <h2 className="text-2xl font-extrabold text-slate-900 dark:text-white mb-2">
+              Nasıl Pratik Yapmak İstersiniz?
+            </h2>
+            <p className="text-xs text-slate-500 dark:text-slate-400">
+              Deste: <span className="font-semibold text-slate-800 dark:text-slate-200">{group.name}</span> ({group.words.length} kelime)
+            </p>
           </div>
 
-          <h2 className="text-2xl sm:text-3xl font-bold mb-2 tracking-tight text-center">Quiz Yönünü Seçin</h2>
-          <p className="text-zinc-400 text-center mb-10 text-sm sm:text-base px-4">
-            Hangi çeviri yönünde pratik yapmak istiyorsunuz?
-          </p>
-
-          <div className="w-full max-w-md space-y-4 px-2">
-            {/* Türkçe -> İngilizce */}
-            <button
-              onClick={() => startQuiz('tr-to-en')}
-              className="group relative w-full p-5 sm:p-6 rounded-2xl bg-zinc-900 border border-zinc-800 active:bg-zinc-800 active:scale-[0.98] transition-all duration-200 text-left haptic-feedback"
-            >
-              <div className="flex items-center gap-4">
-                <div className="flex items-center gap-3 flex-shrink-0">
-                  <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl bg-zinc-800 border border-zinc-700 flex items-center justify-center overflow-hidden">
-                    <img src="assets/tr.svg" alt="Turkish" className="w-full h-full object-cover" />
-                  </div>
-                  <ArrowRight className="text-zinc-500 group-active:text-white transition-colors" size={20} />
-                  <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl bg-zinc-800 border border-zinc-700 flex items-center justify-center overflow-hidden">
-                    <img src="assets/us.svg" alt="English" className="w-full h-full object-cover" />
-                  </div>
-                </div>
-                <div className="flex-1 min-w-0">
-                  <h3 className="text-base sm:text-lg font-semibold text-white">Türkçe → İngilizce</h3>
-                  <p className="text-xs sm:text-sm text-zinc-400 truncate">Türkçe kelime, İngilizce karşılık</p>
-                </div>
-              </div>
-            </button>
-
-            {/* İngilizce -> Türkçe */}
+          <div className="space-y-4">
             <button
               onClick={() => startQuiz('en-to-tr')}
-              className="group relative w-full p-5 sm:p-6 rounded-2xl bg-zinc-900 border border-zinc-800 active:bg-zinc-800 active:scale-[0.98] transition-all duration-200 text-left haptic-feedback"
+              className="w-full bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 p-5 rounded-3xl text-left shadow-sm hover:shadow-md transition-all active:scale-98 group flex items-center justify-between"
             >
-              <div className="flex items-center gap-4">
-                <div className="flex items-center gap-3 flex-shrink-0">
-                  <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl bg-zinc-800 border border-zinc-700 flex items-center justify-center overflow-hidden">
-                    <img src="assets/us.svg" alt="English" className="w-full h-full object-cover" />
-                  </div>
-                  <ArrowRight className="text-zinc-500 group-active:text-white transition-colors" size={20} />
-                  <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl bg-zinc-800 border border-zinc-700 flex items-center justify-center overflow-hidden">
-                    <img src="assets/tr.svg" alt="Turkish" className="w-full h-full object-cover" />
-                  </div>
+              <div className="flex items-center gap-3.5">
+                <div className="flex items-center gap-1.5 shrink-0">
+                  <img src={usFlag} alt="English" className="w-8 h-8 rounded-full object-cover shadow-sm ring-1 ring-black/10" />
+                  <ArrowRight size={14} className="text-slate-400 group-hover:text-blue-500 transition-colors" />
+                  <img src={trFlag} alt="Türkçe" className="w-8 h-8 rounded-full object-cover shadow-sm ring-1 ring-black/10" />
                 </div>
-                <div className="flex-1 min-w-0">
-                  <h3 className="text-base sm:text-lg font-semibold text-white">İngilizce → Türkçe</h3>
-                  <p className="text-xs sm:text-sm text-zinc-400 truncate">İngilizce kelime, Türkçe karşılık</p>
+                <div>
+                  <h3 className="text-sm font-bold text-slate-900 dark:text-white">İngilizce → Türkçe</h3>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">Soru İngilizce, şıklar Türkçe</p>
                 </div>
               </div>
+              <ArrowRight size={18} className="text-slate-300 group-hover:text-blue-600 transition-colors shrink-0" />
+            </button>
+
+            <button
+              onClick={() => startQuiz('tr-to-en')}
+              className="w-full bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 p-5 rounded-3xl text-left shadow-sm hover:shadow-md transition-all active:scale-98 group flex items-center justify-between"
+            >
+              <div className="flex items-center gap-3.5">
+                <div className="flex items-center gap-1.5 shrink-0">
+                  <img src={trFlag} alt="Türkçe" className="w-8 h-8 rounded-full object-cover shadow-sm ring-1 ring-black/10" />
+                  <ArrowRight size={14} className="text-slate-400 group-hover:text-blue-500 transition-colors" />
+                  <img src={usFlag} alt="English" className="w-8 h-8 rounded-full object-cover shadow-sm ring-1 ring-black/10" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-slate-900 dark:text-white">Türkçe → İngilizce</h3>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">Soru Türkçe, şıklar İngilizce</p>
+                </div>
+              </div>
+              <ArrowRight size={18} className="text-slate-300 group-hover:text-blue-600 transition-colors shrink-0" />
             </button>
           </div>
         </div>
@@ -218,155 +260,149 @@ const Quiz: React.FC<QuizProps> = ({ group, onExit, onUpdateMistakes, onPerfectC
     );
   }
 
-  // Loading screen - MOBILE OPTIMIZED
+  // Loading Screen
   if (loadingState === 'generating') {
     return (
-      <div className="full-height-mobile flex flex-col items-center justify-center bg-zinc-950 text-zinc-100 px-6 safe-area-inset-bottom">
-        <div className="animate-scale-in text-center">
-          <div className="relative mb-6">
-            <Loader2 className="h-16 w-16 animate-spin text-zinc-100 mx-auto" />
+      <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 px-6">
+        <div className="text-center animate-fade-in">
+          <div className="w-16 h-16 rounded-3xl bg-blue-50 dark:bg-blue-950/50 text-blue-600 flex items-center justify-center mx-auto mb-5 shadow-lg shadow-blue-500/10">
+            <Loader2 className="h-8 w-8 animate-spin" />
           </div>
-          <h2 className="text-2xl font-bold tracking-tight mb-2">Quiz Hazırlanıyor</h2>
-          <p className="text-zinc-400">Yapay zeka çeldirici şıkları üretiyor...</p>
-          <div className="mt-4 px-4 py-2 rounded-full bg-zinc-900 border border-zinc-800 inline-flex items-center gap-2 text-sm text-zinc-300 font-medium">
-            {quizDirection === 'tr-to-en' ? (
-              <>TR <ArrowRight size={14} className="text-zinc-500" /> EN</>
-            ) : (
-              <>EN <ArrowRight size={14} className="text-zinc-500" /> TR</>
-            )}
-          </div>
+          <h2 className="text-xl font-extrabold text-slate-900 dark:text-white mb-1.5">
+            Quiz Hazırlanıyor
+          </h2>
+          <p className="text-xs text-slate-500 dark:text-slate-400 max-w-xs">
+            Yapay zeka akıllı çeldiriciler ve soru seçeneklerini üretiyor...
+          </p>
         </div>
       </div>
     );
   }
 
-  // Finished screen - MOBILE OPTIMIZED
+  // Finished Screen
   if (finished) {
     const percentage = Math.round((score / questions.length) * 100);
     const isGoodScore = percentage >= 70;
 
     return (
-      <div className="full-height-mobile flex flex-col bg-zinc-950 text-zinc-100 safe-area-inset-top safe-area-inset-bottom">
-        {/* Header */}
-        <div className="flex items-center justify-center px-4 py-3 border-b border-zinc-800">
-          <span className="text-sm font-medium text-zinc-400">Quiz Tamamlandı</span>
+      <div className="min-h-screen flex flex-col bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 safe-area-inset-top safe-area-inset-bottom">
+        <div className="flex items-center justify-center px-4 py-3 border-b border-slate-200/80 dark:border-slate-800/80 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md">
+          <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">
+            Quiz Sonucu
+          </span>
         </div>
 
-        {/* Content */}
-        <div className="flex-1 flex flex-col items-center justify-center px-5 py-8 animate-scale-in">
-          <div className={`w-24 h-24 rounded-3xl border flex items-center justify-center mb-8 ${isGoodScore
-            ? 'bg-zinc-900 border-emerald-500/30 text-emerald-400'
-            : 'bg-zinc-900 border-zinc-800 text-zinc-300'
-            }`}>
-            <Trophy size={48} />
+        <div className="flex-1 flex flex-col items-center justify-center px-5 py-8 pb-28 md:py-8 max-w-md mx-auto w-full text-center">
+          <div
+            className={`w-20 h-20 rounded-3xl flex items-center justify-center mb-6 shadow-xl ${
+              isGoodScore
+                ? 'bg-amber-50 dark:bg-amber-950/40 text-amber-500 border border-amber-200 dark:border-amber-800 shadow-amber-500/20'
+                : 'bg-blue-50 dark:bg-blue-950/40 text-blue-600 border border-blue-200 dark:border-blue-800 shadow-blue-500/20'
+            }`}
+          >
+            <Trophy size={40} />
           </div>
 
-          <h2 className="text-3xl font-bold mb-2">{isGoodScore ? 'Tebrikler!' : 'Quiz Bitti!'}</h2>
-          <p className="text-zinc-400 mb-8">
-            {isGoodScore ? 'Harika bir performans gösterdin!' : 'Hatalarını tekrar ederek tam kavrayışa ulaşabilirsin.'}
+          <h2 className="text-2xl font-extrabold text-slate-900 dark:text-white mb-1">
+            {isGoodScore ? 'Muhteşem Başarı!' : 'Quiz Tamamlandı!'}
+          </h2>
+          <p className="text-xs text-slate-500 dark:text-slate-400 mb-8 max-w-xs">
+            {isGoodScore
+              ? 'Kelimeleri harika bir başarı oranıyla tamamladınız.'
+              : 'Yanlışlarınızı inceleyip hatalı kelimeleri tekrar ederek hafızanızı güçlendirebilirsiniz.'}
           </p>
 
-          {/* Score Display */}
-          <div className="relative mb-10">
-            <div className="w-40 h-40 rounded-full border-4 border-zinc-800 flex items-center justify-center relative">
-              <div
-                className="absolute inset-0 rounded-full"
-                style={{
-                  background: `conic-gradient(${isGoodScore ? '#22c55e' : '#fafafa'} ${percentage}%, transparent 0)`,
-                  maskImage: 'radial-gradient(transparent 60%, black 61%)',
-                  WebkitMaskImage: 'radial-gradient(transparent 60%, black 61%)'
-                }}
-              />
-              <div className="text-center z-10">
-                <div className="text-5xl font-bold text-white">{score}</div>
-                <div className="text-zinc-500 text-sm">/ {questions.length}</div>
-              </div>
+          {/* Score Badge */}
+          <div className="w-32 h-32 rounded-full border-4 border-blue-500/20 flex flex-col items-center justify-center mb-8 relative bg-white dark:bg-slate-900 shadow-md">
+            <span className="text-3xl font-extrabold text-blue-600 dark:text-blue-400">
+              %{percentage}
+            </span>
+            <span className="text-xs text-slate-400 font-medium">
+              {score} / {questions.length} Doğru
+            </span>
+          </div>
+
+          {/* Stats Grid */}
+          <div className="grid grid-cols-2 gap-3 w-full mb-6">
+            <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 p-4 rounded-2xl shadow-sm">
+              <div className="text-xl font-bold text-emerald-600 dark:text-emerald-400 mb-0.5">{score}</div>
+              <div className="text-xs text-slate-600 dark:text-slate-400 font-medium">Doğru Cevap</div>
+            </div>
+            <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 p-4 rounded-2xl shadow-sm">
+              <div className="text-xl font-bold text-rose-600 dark:text-rose-400 mb-0.5">{wrongAnswers.length}</div>
+              <div className="text-xs text-slate-600 dark:text-slate-400 font-medium">Yanlış Cevap</div>
             </div>
           </div>
 
-          {/* Stats */}
-          <div className="grid grid-cols-2 gap-4 w-full max-w-xs mb-8">
-            <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-4 text-center">
-              <div className="text-2xl font-bold text-emerald-400 mb-1">{score}</div>
-              <div className="text-xs text-zinc-500">Doğru</div>
-            </div>
-            <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-4 text-center">
-              <div className="text-2xl font-bold text-rose-400 mb-1">{wrongAnswers.length}</div>
-              <div className="text-xs text-zinc-500">Yanlış</div>
-            </div>
-          </div>
-
-          {/* Wrong Answers Summary (Mobile) */}
+          {/* Wrong answers review button */}
           {wrongAnswers.length > 0 && (
             <button
               onClick={() => setShowWrongPanel(true)}
-              className="flex items-center gap-2 text-sm text-zinc-400 mb-8 px-4 py-2 rounded-lg bg-zinc-900 border border-zinc-800 haptic-feedback hover:text-white"
+              className="flex items-center gap-2 text-xs font-semibold text-rose-600 dark:text-rose-400 hover:text-rose-700 mb-6 px-3.5 py-2 rounded-full bg-rose-50 dark:bg-rose-950/40 border border-rose-200/60 dark:border-rose-900/60 transition-colors"
             >
-              <AlertCircle size={16} />
-              Hatalı cevapları incele ({wrongAnswers.length})
+              <AlertCircle size={14} />
+              <span>Hatalı {wrongAnswers.length} kelimeyi incele</span>
             </button>
           )}
-        </div>
 
-        {/* Bottom Actions */}
-        <div className="px-5 pb-6 space-y-3">
-          {wrongAnswers.length > 0 && (
+          {/* Actions */}
+          <div className="w-full space-y-2.5">
+            {wrongAnswers.length > 0 && (
+              <button
+                onClick={retryWrongWords}
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3.5 rounded-2xl transition-all active:scale-98 text-xs flex items-center justify-center gap-2 shadow-lg shadow-blue-500/30"
+              >
+                <RotateCcw size={16} />
+                <span>Sadece Hataları Tekrarla ({wrongAnswers.length} Kelime)</span>
+              </button>
+            )}
             <button
-              onClick={retryWrongWords}
-              className="w-full bg-white text-zinc-950 font-semibold py-4 rounded-xl transition-all active:scale-[0.98] haptic-feedback text-base flex items-center justify-center gap-2 shadow-lg"
+              onClick={onExit}
+              className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-800 dark:text-slate-200 font-semibold py-3.5 rounded-2xl transition-all active:scale-98 text-xs shadow-sm"
             >
-              <RotateCcw size={18} />
-              <span>Sadece Hataları Tekrarla ({wrongAnswers.length} Kelime)</span>
+              Destelere Dön
             </button>
-          )}
-          <button
-            onClick={onExit}
-            className={`w-full font-medium py-3.5 rounded-xl transition-all active:scale-[0.98] haptic-feedback text-base ${
-              wrongAnswers.length > 0
-                ? 'bg-zinc-900 border border-zinc-800 text-zinc-300 hover:text-white'
-                : 'bg-white text-zinc-950 font-semibold py-4'
-            }`}
-          >
-            Ana Ekrana Dön
-          </button>
+          </div>
         </div>
 
-        {/* Wrong Answers Bottom Sheet */}
+        {/* Wrong Answers Sheet */}
         {showWrongPanel && (
           <div className="fixed inset-0 z-50 flex flex-col">
             <div
-              className="absolute inset-0 bg-black/80 backdrop-blur-sm animate-fade-in"
+              className="absolute inset-0 bg-black/60 backdrop-blur-sm animate-fade-in"
               onClick={() => setShowWrongPanel(false)}
             />
-            <div className="mt-auto bg-zinc-900 rounded-t-3xl border-t border-zinc-800 relative animate-slide-up max-h-[70vh] flex flex-col safe-area-inset-bottom">
-              <div className="flex-shrink-0 pt-3 pb-2">
-                <div className="w-12 h-1.5 bg-zinc-700 rounded-full mx-auto" />
-              </div>
-              <div className="flex items-center justify-between px-5 py-3 border-b border-zinc-800 flex-shrink-0">
-                <h3 className="font-semibold text-white flex items-center gap-2">
-                  <AlertCircle size={18} className="text-red-400" />
-                  Hatalı Cevaplar
+            <div className="mt-auto bg-white dark:bg-slate-900 rounded-t-3xl border-t border-slate-200 dark:border-slate-800 relative animate-slide-up max-h-[70vh] flex flex-col safe-area-inset-bottom shadow-2xl p-5">
+              <div className="w-12 h-1.5 bg-slate-300 dark:bg-slate-700 rounded-full mx-auto mb-4" />
+              <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-slate-800 mb-4">
+                <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                  <AlertCircle size={16} className="text-rose-500" />
+                  <span>Hatalı Cevaplar ({wrongAnswers.length})</span>
                 </h3>
                 <button
                   onClick={() => setShowWrongPanel(false)}
-                  className="text-zinc-400 hover:text-white p-2 -mr-2"
+                  className="p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
                 >
-                  <X size={20} />
+                  <X size={18} />
                 </button>
               </div>
-              <div className="flex-1 overflow-y-auto px-5 py-4 space-y-3 overscroll-contain">
+
+              <div className="flex-1 overflow-y-auto space-y-2.5">
                 {wrongAnswers.map((wa, idx) => (
-                  <div key={idx} className="bg-zinc-950 p-4 rounded-xl border border-red-900/30">
-                    <div className="font-medium text-white mb-2 text-lg">
+                  <div
+                    key={idx}
+                    className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700"
+                  >
+                    <div className="text-xs font-bold text-slate-900 dark:text-white mb-2">
                       {quizDirection === 'tr-to-en' ? wa.word.tr : wa.word.en}
                     </div>
-                    <div className="space-y-1 text-sm">
-                      <div className="flex items-center gap-2 text-red-400">
-                        <X size={14} />
-                        <span className="line-through opacity-70">{wa.userAnswer}</span>
+                    <div className="flex items-center justify-between text-xs">
+                      <div className="flex items-center gap-1.5 text-rose-500 line-through">
+                        <X size={13} />
+                        <span>{wa.userAnswer}</span>
                       </div>
-                      <div className="flex items-center gap-2 text-green-500 font-medium">
-                        <Check size={14} />
+                      <div className="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400 font-semibold">
+                        <Check size={13} />
                         <span>{wa.correctAnswer}</span>
                       </div>
                     </div>
@@ -380,202 +416,128 @@ const Quiz: React.FC<QuizProps> = ({ group, onExit, onUpdateMistakes, onPerfectC
     );
   }
 
+  // Active Quiz Question
   const currentQuestion = questions[currentIndex];
   const progress = ((currentIndex + 1) / questions.length) * 100;
+  const isEnTarget = quizDirection !== 'tr-to-en';
+  const targetText = isEnTarget ? currentQuestion.targetWord.en : currentQuestion.targetWord.tr;
 
-  // Main Quiz Screen - MOBILE OPTIMIZED
   return (
-    <div className="full-height-mobile flex flex-col bg-zinc-950 text-zinc-100 overflow-hidden">
-      {/* Header */}
-      <div className="flex-shrink-0 px-4 py-3 bg-zinc-950/95 backdrop-blur-sm border-b border-zinc-800 safe-area-inset-top">
-        <div className="flex items-center justify-between mb-3">
+    <div className="min-h-screen flex flex-col bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 safe-area-inset-top safe-area-inset-bottom">
+      {/* Quiz Top Bar */}
+      <div className="sticky top-0 z-30 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800/80">
+        <div className="max-w-2xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
           <button
             onClick={onExit}
-            className="flex items-center justify-center w-10 h-10 rounded-xl bg-zinc-900 text-zinc-400 active:text-white active:bg-zinc-800 transition-colors haptic-feedback"
-            title="Çıkış (Esc)"
+            className="flex items-center justify-center w-11 h-11 min-w-[44px] min-h-[44px] rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+            title="Quizden Çık"
+            aria-label="Quizden Çık"
           >
-            <X size={20} />
+            <X size={18} />
           </button>
 
           <div className="flex items-center gap-2">
-            <div className="px-3 py-1 rounded-full bg-zinc-900 border border-zinc-800 text-xs font-semibold text-zinc-300">
-              {quizDirection === 'tr-to-en' ? 'TR → EN' : 'EN → TR'}
-            </div>
-            <div className="flex items-center gap-1.5 text-sm font-medium">
-              <span className="font-bold text-white">{currentIndex + 1}</span>
-              <span className="text-zinc-600">/</span>
-              <span className="text-zinc-500">{questions.length}</span>
-            </div>
+            <span className="px-2.5 py-0.5 rounded-full bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 text-xs font-bold border border-blue-200/50 dark:border-blue-900/50">
+              {quizDirection === 'tr-to-en' ? 'TR ➔ EN' : 'EN ➔ TR'}
+            </span>
+            <span className="text-xs font-bold text-slate-500">
+              {currentIndex + 1} / {questions.length}
+            </span>
           </div>
 
-          <div className="flex items-center gap-2">
-            {/* Header wrong count pill */}
-            {wrongAnswers.length > 0 && (
-              <button
-                onClick={() => setShowWrongPanel(true)}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs font-semibold hover:bg-rose-500/20 transition-colors"
-                title="Hatalı cevapları incele"
-              >
-                <AlertCircle size={14} />
-                <span>{wrongAnswers.length}</span>
-              </button>
-            )}
-            {/* Score pill */}
-            <div className="flex items-center gap-1 px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 font-semibold text-xs">
-              <Check size={14} />
-              <span>{score}</span>
-            </div>
+          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 text-xs font-bold border border-emerald-200/50 dark:border-emerald-900/50">
+            <Check size={13} />
+            <span>{score}</span>
           </div>
         </div>
 
         {/* Progress Bar */}
-        <div className="progress-bar">
-          <div className="progress-bar-fill" style={{ width: `${progress}%` }} />
+        <div className="h-1 bg-slate-100 dark:bg-slate-800 w-full overflow-hidden">
+          <div
+            className="h-full bg-blue-600 transition-all duration-300"
+            style={{ width: `${progress}%` }}
+          />
         </div>
       </div>
 
-      {/* Question Content */}
-      <div className="flex-1 flex flex-col justify-center px-5 py-6 overflow-y-auto">
-        <div className="animate-slide-up">
-          {/* Question Word */}
-          <div className="text-center mb-10">
-            <span className="inline-flex items-center rounded-full bg-zinc-900 px-3 py-1.5 text-xs font-medium text-zinc-400 border border-zinc-800 mb-4">
-              {quizDirection === 'tr-to-en' ? 'Türkçe → İngilizce' : 'İngilizce → Türkçe'}
-            </span>
-            <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-white mb-2 tracking-tight break-words">
-              {quizDirection === 'tr-to-en' ? currentQuestion.targetWord.tr : currentQuestion.targetWord.en}
+      {/* Question Body */}
+      <div className="flex-1 flex flex-col justify-center px-4 sm:px-6 py-6 pb-28 md:py-6 max-w-lg mx-auto w-full">
+        {/* Target Word */}
+        <div className="text-center mb-8">
+          <div className="flex items-center justify-center gap-2 mb-2">
+            <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 dark:text-white tracking-tight break-words">
+              {targetText}
             </h2>
-            <p className="text-zinc-500 text-sm">
-              {quizDirection === 'tr-to-en' ? 'Doğru İngilizce karşılığı seçin' : 'Doğru Türkçe karşılığı seçin'}
-            </p>
-          </div>
-
-          {/* Options */}
-          <div className="space-y-3 max-w-lg mx-auto w-full">
-            {currentQuestion.options.map((option, idx) => {
-              let btnClass = "bg-zinc-900 border-zinc-800 text-zinc-200 active:bg-zinc-800 active:border-zinc-700";
-              let iconComponent = null;
-
-              if (selectedOption) {
-                if (option === currentQuestion.correctOption) {
-                  btnClass = "bg-emerald-500/10 border-emerald-500/50 text-emerald-400 ring-2 ring-emerald-500/30";
-                  iconComponent = <Check className="absolute right-4 w-5 h-5 text-emerald-500" />;
-                } else if (option === selectedOption) {
-                  btnClass = "bg-rose-500/10 border-rose-500/50 text-rose-400 ring-2 ring-rose-500/30 animate-shake";
-                  iconComponent = <X className="absolute right-4 w-5 h-5 text-rose-500" />;
-                } else {
-                  btnClass = "bg-zinc-900/50 border-zinc-800 text-zinc-600 opacity-50";
-                }
-              }
-
-              return (
-                <button
-                  key={idx}
-                  onClick={() => handleOptionClick(option)}
-                  disabled={selectedOption !== null}
-                  className={`relative w-full p-4 sm:p-5 rounded-xl border-2 text-base sm:text-lg font-medium transition-all duration-200 min-h-[60px] flex items-center justify-center text-center haptic-feedback ${btnClass}`}
-                >
-                  <span className="hidden sm:inline-flex items-center justify-center w-6 h-6 rounded-md bg-zinc-800 border border-zinc-700 text-zinc-400 text-xs font-mono absolute left-4">
-                    {idx + 1}
-                  </span>
-                  <span className="text-center w-full px-8">{option}</span>
-                  {iconComponent}
-                </button>
-              );
-            })}
-
-            {/* Manual Advance Bar on Error */}
-            {selectedOption !== null && !isCorrect && (
-              <div className="pt-4 flex flex-col items-center animate-slide-up">
-                <button
-                  onClick={() => handleNext(wrongAnswers)}
-                  className="w-full sm:w-auto px-8 py-3.5 rounded-xl bg-white text-zinc-950 font-semibold flex items-center justify-center gap-2 hover:bg-zinc-200 transition-all active:scale-[0.98] shadow-lg text-base"
-                >
-                  <span>Devam Et</span>
-                  <span className="hidden sm:inline text-xs text-zinc-500 font-normal border border-zinc-300 rounded px-1.5 py-0.5 ml-1">Space ↵</span>
-                  <ArrowRight size={18} />
-                </button>
-                <p className="text-zinc-500 text-xs mt-2">Cevabı inceledikten sonra devam edebilirsiniz</p>
-              </div>
+            {isEnTarget && (
+              <button
+                onClick={() => speakEnglish(targetText)}
+                className="w-11 h-11 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-xl text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-slate-800 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+                title="Telaffuzu Dinle"
+                aria-label="İngilizce Telaffuzu Dinle"
+              >
+                <Volume2 size={22} />
+              </button>
             )}
           </div>
+          <p className="text-xs text-slate-500 dark:text-slate-400">
+            {isEnTarget ? 'Doğru Türkçe karşılığı seçin' : 'Doğru İngilizce karşılığı seçin'}
+          </p>
         </div>
-      </div>
 
-      {/* Wrong Answers Bottom Sheet */}
-      {showWrongPanel && (
-        <div className="fixed inset-0 z-50 flex flex-col">
-          <div
-            className="absolute inset-0 bg-black/80 backdrop-blur-sm animate-fade-in"
-            onClick={() => setShowWrongPanel(false)}
-          />
-          <div className="mt-auto bg-zinc-900 rounded-t-3xl border-t border-zinc-800 relative animate-slide-up max-h-[60vh] flex flex-col safe-area-inset-bottom">
-            <div className="flex-shrink-0 pt-3 pb-2">
-              <div className="w-12 h-1.5 bg-zinc-700 rounded-full mx-auto" />
-            </div>
-            <div className="flex items-center justify-between px-5 py-3 border-b border-zinc-800 flex-shrink-0">
-              <h3 className="font-semibold text-white flex items-center gap-2">
-                <AlertCircle size={18} className="text-red-400" />
-                Hatalı Cevaplar ({wrongAnswers.length})
-              </h3>
+        {/* 4 Option Buttons */}
+        <div className="space-y-3">
+          {currentQuestion.options.map((option, idx) => {
+            let stateStyles =
+              'bg-white dark:bg-slate-900 border-slate-200/80 dark:border-slate-800 text-slate-800 dark:text-slate-100 hover:border-blue-400 dark:hover:border-blue-500';
+            let iconComponent = null;
+
+            if (selectedOption) {
+              if (option === currentQuestion.correctOption) {
+                stateStyles =
+                  'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-500 text-emerald-700 dark:text-emerald-300 ring-2 ring-emerald-500/30';
+                iconComponent = <Check size={18} className="text-emerald-600 absolute right-4" />;
+              } else if (option === selectedOption) {
+                stateStyles =
+                  'bg-rose-50 dark:bg-rose-950/40 border-rose-500 text-rose-700 dark:text-rose-300 ring-2 ring-rose-500/30 animate-shake';
+                iconComponent = <X size={18} className="text-rose-600 absolute right-4" />;
+              } else {
+                stateStyles = 'bg-slate-100/60 dark:bg-slate-900/40 border-slate-200/40 dark:border-slate-800/40 text-slate-400 opacity-60';
+              }
+            }
+
+            return (
               <button
-                onClick={() => setShowWrongPanel(false)}
-                className="text-zinc-400 hover:text-white p-2 -mr-2"
+                key={idx}
+                onClick={() => handleOptionClick(option)}
+                disabled={selectedOption !== null}
+                className={`relative w-full p-4 rounded-2xl border-2 text-sm sm:text-base font-semibold transition-all duration-150 min-h-[56px] flex items-center justify-center text-center shadow-sm active:scale-98 ${stateStyles}`}
               >
-                <X size={20} />
+                <span className="hidden sm:inline-flex items-center justify-center w-6 h-6 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-500 text-xs font-mono font-bold absolute left-3.5">
+                  {idx + 1}
+                </span>
+                <span className="w-full px-8 truncate">{option}</span>
+                {iconComponent}
               </button>
-            </div>
-            <div className="flex-1 overflow-y-auto px-5 py-4 space-y-3 overscroll-contain">
-              {wrongAnswers.map((wa, idx) => (
-                <div key={idx} className="bg-zinc-950 p-4 rounded-xl border border-red-900/30">
-                  <div className="font-medium text-white mb-2">
-                    {quizDirection === 'tr-to-en' ? wa.word.tr : wa.word.en}
-                  </div>
-                  <div className="space-y-1 text-sm">
-                    <div className="flex items-center gap-2 text-red-400">
-                      <X size={14} />
-                      <span className="line-through opacity-70">{wa.userAnswer}</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-green-500 font-medium">
-                      <Check size={14} />
-                      <span>{wa.correctAnswer}</span>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
+            );
+          })}
 
-      {/* Desktop Sidebar - Hidden on Mobile */}
-      <div className="hidden lg:flex fixed right-0 top-0 bottom-0 w-80 bg-zinc-900 border-l border-zinc-800 flex-col z-10">
-        <div className="p-4 border-b border-zinc-800 font-semibold text-zinc-200 flex items-center gap-2 text-sm">
-          <AlertCircle size={16} />
-          Hatalı Cevaplar
-        </div>
-        <div className="flex-1 overflow-y-auto p-4 space-y-3">
-          {wrongAnswers.length === 0 ? (
-            <div className="text-center text-zinc-600 mt-10 text-sm">
-              <div className="w-12 h-12 bg-zinc-800 rounded-xl flex items-center justify-center mx-auto mb-3">
-                <Check size={24} className="text-zinc-600" />
-              </div>
-              <p>Hata yok, harika!</p>
+          {/* Pause on Wrong Answer: manual advance button */}
+          {selectedOption !== null && !isCorrect && (
+            <div className="pt-4 flex flex-col items-center animate-slide-up">
+              <button
+                onClick={() => handleNext(wrongAnswers)}
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3.5 px-6 rounded-2xl flex items-center justify-center gap-2 shadow-lg shadow-blue-500/30 active:scale-98 text-xs transition-all"
+              >
+                <span>Devam Et</span>
+                <span className="hidden sm:inline text-xs bg-white/20 text-white rounded px-1.5 py-0.5">
+                  Space ↵
+                </span>
+                <ArrowRight size={16} />
+              </button>
+              <p className="text-xs text-slate-500 mt-2">
+                Doğru cevabı inceledikten sonra devam edebilirsiniz.
+              </p>
             </div>
-          ) : (
-            wrongAnswers.map((wa, idx) => (
-              <div key={idx} className="bg-zinc-950/50 p-3 rounded-xl border border-red-900/30">
-                <div className="font-medium text-zinc-200 mb-1">
-                  {quizDirection === 'tr-to-en' ? wa.word.tr : wa.word.en}
-                </div>
-                <div className="text-sm flex flex-col gap-1">
-                  <span className="text-red-400 line-through decoration-red-400/50 opacity-70">{wa.userAnswer}</span>
-                  <span className="text-green-500 font-medium flex items-center gap-1">
-                    {wa.correctAnswer}
-                  </span>
-                </div>
-              </div>
-            ))
           )}
         </div>
       </div>

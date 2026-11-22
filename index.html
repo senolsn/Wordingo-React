@@ -8,50 +8,75 @@
   <!-- Mobile Web App Meta Tags -->
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
   <meta name="apple-mobile-web-app-title" content="Wordingo" />
-  <meta name="theme-color" content="#09090b" />
-  <meta name="msapplication-TileColor" content="#09090b" />
+  <meta name="theme-color" content="#191919" />
+  <meta name="msapplication-TileColor" content="#191919" />
   
   <!-- SEO Meta Tags -->
-  <meta name="description" content="AI destekli kelime öğrenme uygulaması. Yapay zeka ile İngilizce-Türkçe kelime grupları oluşturun ve quiz ile pratik yapın." />
+  <meta name="description" content="AI destekli modern kelime öğrenme uygulaması. İngilizce-Türkçe kelime grupları oluşturun, pratik yapın ve kelime hazinenizi geliştirin." />
   <meta name="keywords" content="kelime öğrenme, İngilizce, Türkçe, AI, yapay zeka, quiz, vocabulary" />
   
-  <title>Wordingo - AI Vocabulary App</title>
+  <title>Wordingo - Modern AI Vocabulary Master</title>
+  
+  <!-- Early theme initialization to prevent flash -->
+  <script>
+    (function () {
+      try {
+        var savedTheme = localStorage.getItem('wordingo-theme');
+        var prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+        if (savedTheme === 'dark' || (!savedTheme && prefersDark)) {
+          document.documentElement.classList.add('dark');
+        } else {
+          document.documentElement.classList.remove('dark');
+        }
+      } catch (e) {}
+    })();
+  </script>
+
   <script src="https://cdn.tailwindcss.com"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   <script>
     tailwind.config = {
       darkMode: 'class',
       theme: {
         extend: {
           fontFamily: {
-            sans: ['Inter', 'sans-serif'],
+            sans: ['Inter', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
           },
           colors: {
-            background: '#09090b', // zinc-950
-            surface: '#18181b', // zinc-900
-            border: '#27272a', // zinc-800
-            primary: {
-              DEFAULT: '#fafafa', // zinc-50
-              foreground: '#18181b',
+            slate: {
+              50: '#FBFBFA',
+              100: '#F7F6F3',
+              200: '#E8E7E4',
+              300: '#D3D2CE',
+              400: '#9B9A97',
+              500: '#787774',
+              600: '#5F5E5B',
+              700: '#37352F',
+              800: '#2E2E2E',
+              850: '#252525',
+              900: '#202020',
+              950: '#191919',
             },
-            secondary: {
-              DEFAULT: '#27272a',
-              foreground: '#fafafa',
+            blue: {
+              50: '#edf5fd',
+              100: '#d5e8fb',
+              200: '#b0d5f8',
+              300: '#7bbcf3',
+              400: '#409ded',
+              500: '#2eaadc',
+              600: '#2383e2', // Official Notion Blue
+              700: '#1d74c6',
+              800: '#175a9b',
+              900: '#174a7e',
+              950: '#112b48',
             }
           }
         }
       }
     }
   </script>
-  <style>
-    body {
-      font-family: 'Inter', sans-serif;
-      background-color: #09090b;
-      color: #fafafa;
-    }
-  </style>
   <script type="importmap">
 {
   "imports": {

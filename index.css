@@ -20,11 +20,20 @@ body {
   margin: 0;
   padding: 0;
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  background-color: #09090b;
-  color: #fafafa;
   overflow-x: hidden;
   min-height: 100vh;
   min-height: 100dvh; /* Dynamic viewport height for mobile */
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+html.dark body {
+  background-color: #191919;
+  color: #f7f7f7;
+}
+
+html:not(.dark) body {
+  background-color: #f7f6f3;
+  color: #37352f;
 }
 
 /* Prevent rubber banding on iOS */
@@ -163,7 +172,6 @@ select {
   bottom: 0;
   left: 0;
   right: 0;
-  background: #18181b;
   border-top-left-radius: 24px;
   border-top-right-radius: 24px;
   padding: 24px;
@@ -173,6 +181,18 @@ select {
   transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
+html:not(.dark) .bottom-sheet {
+  background: #ffffff;
+  border-top: 1px solid #e8e7e4;
+  box-shadow: 0 -10px 30px -5px rgba(0, 0, 0, 0.08);
+}
+
+html.dark .bottom-sheet {
+  background: #202020;
+  border-top: 1px solid #2e2e2e;
+  box-shadow: 0 -10px 30px -5px rgba(0, 0, 0, 0.6);
+}
+
 .bottom-sheet.open {
   transform: translateY(0);
 }
@@ -180,94 +200,85 @@ select {
 .bottom-sheet-handle {
   width: 40px;
   height: 4px;
-  background: #3f3f46;
   border-radius: 2px;
   margin: 0 auto 20px;
 }
 
+html:not(.dark) .bottom-sheet-handle {
+  background: #d3d2ce;
+}
+
+html.dark .bottom-sheet-handle {
+  background: #3f3f3f;
+}
+
 /* Mobile Card Styles */
 .mobile-card {
-  background: #18181b;
-  border: 1px solid #27272a;
-  border-radius: 16px;
+  border-radius: 20px;
   padding: 16px;
   transition: all 0.2s ease;
 }
 
-.mobile-card:active {
+html:not(.dark) .mobile-card {
+  background: #ffffff;
+  border: 1px solid #e8e7e4;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.04);
+}
+
+html:not(.dark) .mobile-card:active {
+  background: #f7f6f3;
   transform: scale(0.98);
-  background: #1f1f23;
 }
 
-/* Mobile Button Styles */
-.mobile-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  padding: 12px 20px;
-  border-radius: 12px;
-  font-weight: 500;
-  font-size: 15px;
-  transition: all 0.2s ease;
-  cursor: pointer;
-  border: none;
-  outline: none;
+html.dark .mobile-card {
+  background: #202020;
+  border: 1px solid #2e2e2e;
 }
 
-.mobile-btn:active {
-  transform: scale(0.96);
-}
-
-.mobile-btn-primary {
-  background: #fafafa;
-  color: #18181b;
-}
-
-.mobile-btn-primary:active {
-  background: #e4e4e7;
-}
-
-.mobile-btn-secondary {
-  background: #27272a;
-  color: #fafafa;
-  border: 1px solid #3f3f46;
-}
-
-.mobile-btn-secondary:active {
-  background: #3f3f46;
-}
-
-.mobile-btn-ghost {
-  background: transparent;
-  color: #a1a1aa;
-}
-
-.mobile-btn-ghost:active {
-  background: #27272a;
-  color: #fafafa;
+html.dark .mobile-card:active {
+  background: #262626;
+  transform: scale(0.98);
 }
 
 /* Mobile Input Styles */
 .mobile-input {
   width: 100%;
-  background: #09090b;
-  border: 1px solid #27272a;
-  border-radius: 12px;
+  border-radius: 14px;
   padding: 14px 16px;
   font-size: 16px;
-  color: #fafafa;
   transition: all 0.2s ease;
 }
 
-.mobile-input:focus {
-  border-color: #fafafa;
-  outline: none;
-  box-shadow: 0 0 0 2px rgba(250, 250, 250, 0.1);
+html:not(.dark) .mobile-input {
+  background: #ffffff;
+  border: 1px solid #d3d2ce;
+  color: #37352f;
 }
 
-.mobile-input::placeholder {
-  color: #71717a;
+html:not(.dark) .mobile-input:focus {
+  border-color: #2383e2;
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(35, 131, 226, 0.15);
+}
+
+html:not(.dark) .mobile-input::placeholder {
+  color: #9b9a97;
+}
+
+html.dark .mobile-input {
+  background: #191919;
+  border: 1px solid #2e2e2e;
+  color: #f7f7f7;
+}
+
+html.dark .mobile-input:focus {
+  border-color: #2383e2;
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(35, 131, 226, 0.25);
+}
+
+html.dark .mobile-input::placeholder {
+  color: #787774;
 }
 
 /* Mobile List Item */
@@ -346,8 +357,8 @@ select {
 }
 
 .modal-content {
-  background: #18181b;
-  border: 1px solid #27272a;
+  background: #202020;
+  border: 1px solid #2e2e2e;
   border-radius: 20px;
   width: 100%;
   max-width: 400px;
@@ -362,8 +373,8 @@ select {
   bottom: 0;
   left: 0;
   right: 0;
-  background: #18181b;
-  border-top: 1px solid #27272a;
+  background: #202020;
+  border-top: 1px solid #2e2e2e;
   padding: 8px 16px;
   padding-bottom: calc(8px + env(safe-area-inset-bottom, 0px));
   z-index: 50;

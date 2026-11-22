@@ -164,19 +164,51 @@ export const prepareQuizData = async (words: Word[], direction: QuizDirection = 
   }
 };
 
-// Fallback if AI fails completely
+// Curated vocabulary bank for intelligent distractor backfilling when decks have <4 words
+const DEFAULT_DISTRACTOR_POOL: { en: string; tr: string }[] = [
+  { en: "Approach", tr: "Yaklaşım" },
+  { en: "Benefit", tr: "Fayda" },
+  { en: "Challenge", tr: "Zorluk" },
+  { en: "Discover", tr: "Keşfetmek" },
+  { en: "Evaluate", tr: "Değerlendirmek" },
+  { en: "Feature", tr: "Özellik" },
+  { en: "Gather", tr: "Toplamak" },
+  { en: "Hesitate", tr: "Tereddüt etmek" },
+  { en: "Improve", tr: "Geliştirmek" },
+  { en: "Justify", tr: "Gerekçelendirmek" },
+  { en: "Maintain", tr: "Sürdürmek" },
+  { en: "Notice", tr: "Fark etmek" },
+  { en: "Observe", tr: "Gözlemlemek" },
+  { en: "Predict", tr: "Tahmin etmek" },
+  { en: "Require", tr: "Gerektirmek" },
+  { en: "Suggest", tr: "Önermek" },
+  { en: "Tackle", tr: "Ele almak" },
+  { en: "Utilize", tr: "Kullanmak" },
+  { en: "Vary", tr: "Çeşitlilik göstermek" },
+  { en: "Witness", tr: "Tanık olmak" }
+];
+
+// Fallback if AI fails completely or for small word counts
 const fallbackGeneration = (words: Word[], direction: QuizDirection): QuizQuestion[] => {
   const isEnglishAnswer = direction === 'tr-to-en';
 
   return words.map(target => {
-    // Pick random other words from the same list as distractors (in target language)
+    // Pick distractors from other words in the list first
     const otherWords = words.filter(w => w.id !== target.id).map(w => isEnglishAnswer ? w.en : w.tr);
-    const shuffled = otherWords.sort(() => 0.5 - Math.random());
+    const shuffled = [...otherWords].sort(() => 0.5 - Math.random());
     let distractors = shuffled.slice(0, 3);
 
-    // Fill if not enough words
-    while (distractors.length < 3) {
-      distractors.push("N/A");
+    // If still fewer than 3 distractors (e.g. deck has 1-3 words), backfill from curated vocabulary bank
+    if (distractors.length < 3) {
+      const bankFiltered = DEFAULT_DISTRACTOR_POOL
+        .map(item => isEnglishAnswer ? item.en : item.tr)
+        .filter(term => term.toLowerCase() !== (isEnglishAnswer ? target.en : target.tr).toLowerCase() && !distractors.includes(term))
+        .sort(() => 0.5 - Math.random());
+
+      for (const bankWord of bankFiltered) {
+        if (distractors.length >= 3) break;
+        distractors.push(bankWord);
+      }
     }
 
     // Consistency: Capitalize all options
@@ -193,4 +225,4 @@ const fallbackGeneration = (words: Word[], direction: QuizDirection): QuizQuesti
       options
     };
   });
-}
+};

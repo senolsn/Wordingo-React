@@ -33,52 +33,56 @@ export const Auth: React.FC = () => {
   };
 
   return (
-    <div className="full-height-mobile flex flex-col bg-zinc-950 safe-area-inset-top safe-area-inset-bottom">
+    <div className="min-h-screen flex flex-col justify-between bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 safe-area-inset-top safe-area-inset-bottom">
       {/* Content */}
-      <div className="flex-1 flex flex-col items-center justify-center px-5 py-8 relative z-10">
+      <div className="flex-1 flex flex-col items-center justify-center px-4 sm:px-6 py-10 relative z-10">
         <div className="w-full max-w-sm">
           {/* Logo & Header */}
-          <div className="text-center mb-10 animate-slide-down">
-            <div className="inline-flex items-center justify-center w-20 h-20 bg-zinc-900 border border-zinc-800 rounded-2xl mb-6 shadow-xl relative">
-              <Languages size={36} className="text-white" />
-              <div className="absolute -bottom-1 -right-1 w-7 h-7 bg-zinc-800 border border-zinc-700 rounded-lg flex items-center justify-center">
-                <Sparkles size={14} className="text-zinc-200" />
+          <div className="text-center mb-8 animate-slide-down">
+            <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-600 rounded-3xl mb-4 shadow-xl shadow-blue-500/30 text-white relative">
+              <Languages size={32} />
+              <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-indigo-700 rounded-xl flex items-center justify-center border-2 border-white dark:border-slate-900">
+                <Sparkles size={12} className="text-amber-300" />
               </div>
             </div>
-            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-white mb-2">
-              {isLogin ? 'Hoş Geldiniz' : 'Hesap Oluştur'}
+            <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white mb-1.5">
+              {isLogin ? 'Tekrar Hoş Geldiniz' : 'Wordingo\'ya Katılın'}
             </h1>
-            <p className="text-zinc-400 text-sm sm:text-base">
+            <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400">
               {isLogin
-                ? 'Kelime hazinenizi geliştirmeye devam edin'
-                : 'Ücretsiz üye olun ve öğrenmeye başlayın'}
+                ? 'Kelime hazinenizi geliştirmeye hemen devam edin'
+                : 'Ücretsiz üye olun, kelime grupları oluşturun ve pratik yapın'}
             </p>
           </div>
 
           {/* Form Card */}
-          <div className="bg-zinc-900 border border-zinc-800 rounded-2xl p-6 sm:p-8 shadow-2xl animate-slide-up">
-            <form className="space-y-5" onSubmit={handleAuth}>
+          <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-3xl p-6 sm:p-7 shadow-xl shadow-slate-200/50 dark:shadow-none animate-slide-up">
+            <form className="space-y-4" onSubmit={handleAuth}>
               <div>
-                <label className="text-sm font-medium text-zinc-300 block mb-2">Email</label>
+                <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 block mb-1.5">
+                  E-Posta Adresi
+                </label>
                 <input
                   type="email"
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="mobile-input"
+                  className="w-full px-4 py-3 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/30 transition-all"
                   placeholder="ornek@email.com"
                   autoComplete="email"
                 />
               </div>
 
               <div>
-                <label className="text-sm font-medium text-zinc-300 block mb-2">Şifre</label>
+                <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 block mb-1.5">
+                  Şifre
+                </label>
                 <input
                   type="password"
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="mobile-input"
+                  className="w-full px-4 py-3 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/30 transition-all"
                   placeholder="••••••••"
                   autoComplete={isLogin ? 'current-password' : 'new-password'}
                   minLength={6}
@@ -86,8 +90,8 @@ export const Auth: React.FC = () => {
               </div>
 
               {error && (
-                <div className="flex items-start gap-3 p-4 text-sm text-red-400 bg-red-500/10 border border-red-500/30 rounded-xl animate-shake">
-                  <AlertCircle size={18} className="flex-shrink-0 mt-0.5" />
+                <div className="flex items-start gap-2.5 p-3 text-xs text-rose-600 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/50 rounded-xl animate-shake">
+                  <AlertCircle size={16} className="shrink-0 mt-0.5" />
                   <span>{error}</span>
                 </div>
               )}
@@ -95,68 +99,68 @@ export const Auth: React.FC = () => {
               <button
                 type="submit"
                 disabled={isLoading}
-                className="w-full bg-white text-zinc-950 py-4 rounded-xl font-semibold transition-all active:scale-[0.98] disabled:opacity-70 flex items-center justify-center gap-2 haptic-feedback text-base mt-2"
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3.5 rounded-2xl font-bold transition-all active:scale-98 disabled:opacity-70 flex items-center justify-center gap-2 shadow-lg shadow-blue-500/30 text-xs mt-3"
               >
                 {isLoading ? (
-                  <Loader2 className="animate-spin h-5 w-5" />
+                  <Loader2 className="animate-spin h-4 w-4" />
                 ) : isLogin ? (
                   <>
-                    <LogIn size={18} />
-                    Giriş Yap
+                    <LogIn size={16} />
+                    <span>Giriş Yap</span>
                   </>
                 ) : (
                   <>
-                    <UserPlus size={18} />
-                    Kayıt Ol
+                    <UserPlus size={16} />
+                    <span>Hesap Oluştur</span>
                   </>
                 )}
               </button>
             </form>
           </div>
 
-          {/* Toggle Mode */}
-          <div className="text-center mt-6 animate-fade-in">
+          {/* Toggle Login / Register */}
+          <div className="text-center mt-5">
             <button
               onClick={() => {
                 setIsLogin(!isLogin);
                 setError(null);
               }}
-              className="text-sm font-medium text-zinc-400 active:text-white transition-colors py-2 haptic-feedback"
+              className="text-xs font-semibold text-slate-500 hover:text-blue-600 dark:hover:text-blue-400 transition-colors py-1.5"
             >
               {isLogin
-                ? 'Hesabınız yok mu? Kayıt olun'
+                ? 'Hesabınız yok mu? Hemen ücretsiz kayıt olun'
                 : 'Zaten hesabınız var mı? Giriş yapın'}
             </button>
           </div>
 
-          {/* Features Preview */}
-          <div className="mt-10 grid grid-cols-3 gap-4 animate-fade-in" style={{ animationDelay: '200ms' }}>
-            <div className="text-center">
-              <div className="w-12 h-12 mx-auto bg-zinc-900 border border-zinc-800 rounded-xl flex items-center justify-center mb-2 text-zinc-300">
-                <Sparkles size={20} />
+          {/* Value Props */}
+          <div className="mt-8 grid grid-cols-3 gap-3">
+            <div className="text-center p-3 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800/60 shadow-sm">
+              <div className="w-8 h-8 mx-auto bg-blue-50 dark:bg-blue-950/50 rounded-xl flex items-center justify-center mb-1 text-blue-600">
+                <Sparkles size={16} />
               </div>
-              <p className="text-xs text-zinc-400 font-medium">AI Destekli</p>
+              <p className="text-xs text-slate-600 dark:text-slate-400 font-semibold">AI Destekli</p>
             </div>
-            <div className="text-center">
-              <div className="w-12 h-12 mx-auto bg-zinc-900 border border-zinc-800 rounded-xl flex items-center justify-center mb-2 text-zinc-300">
-                <BookOpen size={20} />
+            <div className="text-center p-3 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800/60 shadow-sm">
+              <div className="w-8 h-8 mx-auto bg-blue-50 dark:bg-blue-950/50 rounded-xl flex items-center justify-center mb-1 text-blue-600">
+                <BookOpen size={16} />
               </div>
-              <p className="text-xs text-zinc-400 font-medium">Kelime Grupları</p>
+              <p className="text-xs text-slate-600 dark:text-slate-400 font-semibold">Kelime Grupları</p>
             </div>
-            <div className="text-center">
-              <div className="w-12 h-12 mx-auto bg-zinc-900 border border-zinc-800 rounded-xl flex items-center justify-center mb-2 text-zinc-300">
-                <Target size={20} />
+            <div className="text-center p-3 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800/60 shadow-sm">
+              <div className="w-8 h-8 mx-auto bg-blue-50 dark:bg-blue-950/50 rounded-xl flex items-center justify-center mb-1 text-blue-600">
+                <Target size={16} />
               </div>
-              <p className="text-xs text-zinc-400 font-medium">Akıllı Quiz</p>
+              <p className="text-xs text-slate-600 dark:text-slate-400 font-semibold">Akıllı Quiz</p>
             </div>
           </div>
         </div>
       </div>
 
       {/* Footer */}
-      <div className="flex-shrink-0 px-5 pb-6 text-center">
-        <p className="text-xs text-zinc-400">
-          Wordingo — The Minimalist Study Deck
+      <div className="py-4 text-center">
+        <p className="text-xs text-slate-400 dark:text-slate-600 font-medium">
+          Wordingo — Modern AI Vocabulary Master
         </p>
       </div>
     </div>

@@ -1,23 +1,27 @@
 ---
 name: Wordingo
-description: AI Vocabulary Master - The Minimalist Study Deck
+description: Modern AI Vocabulary Master - Dual Mode Responsive Polyglot Deck
 colors:
-  primary: "#fafafa"
-  primary-foreground: "#18181b"
-  primary-hover: "#e4e4e7"
-  neutral-bg: "#09090b"
-  surface: "#18181b"
-  surface-elevated: "#27272a"
-  surface-active: "#1f1f23"
-  border: "#27272a"
-  border-subtle: "#3f3f46"
-  text-primary: "#fafafa"
-  text-secondary: "#a1a1aa"
-  text-tertiary: "#52525b"
-  status-success: "#22c55e"
-  status-error: "#ef4444"
-  status-warning: "#eab308"
-  status-info: "#3b82f6"
+  primary: "#2383e2"
+  primary-foreground: "#ffffff"
+  primary-hover: "#1d74c6"
+  brand-blue: "#2383e2"
+  light-bg: "#f7f6f3"
+  light-surface: "#ffffff"
+  light-surface-elevated: "#f1f0ec"
+  light-border: "#e8e7e4"
+  light-text-primary: "#37352f"
+  light-text-secondary: "#787774"
+  dark-bg: "#191919"
+  dark-surface: "#202020"
+  dark-surface-elevated: "#252525"
+  dark-border: "#2e2e2e"
+  dark-text-primary: "#f7f7f7"
+  dark-text-secondary: "#9b9a97"
+  status-success: "#0f7b6c"
+  status-error: "#e03e3e"
+  status-warning: "#d9730d"
+  status-info: "#2383e2"
 typography:
   display:
     fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, sans-serif"
@@ -51,8 +55,8 @@ rounded:
   sm: "8px"
   md: "12px"
   lg: "16px"
-  xl: "20px"
-  sheet: "24px"
+  xl: "24px"
+  sheet: "28px"
 spacing:
   xs: "4px"
   sm: "8px"
@@ -69,22 +73,22 @@ components:
   button-primary-hover:
     backgroundColor: "{colors.primary-hover}"
   button-secondary:
-    backgroundColor: "{colors.surface-elevated}"
-    textColor: "{colors.text-primary}"
+    backgroundColor: "{colors.light-surface-elevated}"
+    textColor: "{colors.light-text-primary}"
     rounded: "{rounded.md}"
     padding: "12px 20px"
   button-ghost:
     backgroundColor: "transparent"
-    textColor: "{colors.text-secondary}"
+    textColor: "{colors.light-text-secondary}"
     rounded: "{rounded.md}"
     padding: "12px 20px"
   card:
-    backgroundColor: "{colors.surface}"
-    rounded: "{rounded.lg}"
-    padding: "16px"
+    backgroundColor: "{colors.light-surface}"
+    rounded: "{rounded.xl}"
+    padding: "20px"
   input:
-    backgroundColor: "{colors.neutral-bg}"
-    textColor: "{colors.text-primary}"
+    backgroundColor: "{colors.light-surface}"
+    textColor: "{colors.light-text-primary}"
     rounded: "{rounded.md}"
     padding: "14px 16px"
 ---
@@ -93,9 +97,13 @@ components:
 
 ## Overview
 
-**Creative North Star: "The Minimalist Study Deck"**
+**Creative North Star: "The Modern Polyglot Deck"**
 
-Wordingo is designed as a focused, distraction-free study deck built for deep vocabulary retention. The visual philosophy strips away unnecessary AI decoration, gratuitous neon gradients, and visual noise in favor of a quiet, purposeful monochrome atmosphere. The interface is optimized to feel like a premium, tactile physical deck of cards translated into an intimate dark-mode mobile experience.
+Wordingo is a vibrant, modern vocabulary learning companion designed for both seamless mobile use and focused desktop study. The visual direction takes inspiration from premier modern language platforms: friendly, rounded card architecture (`rounded-2xl` to `rounded-3xl`), flag-accented language pairs (`🇺🇸 English ➔ 🇹🇷 Türkçe`), star mastery bookmarks, and a prominent royal blue primary identity (`#2563EB` / `#3B82F6`).
+
+The interface supports both a luminous, airy Light mode (`#F4F7FB` background with pure white `#FFFFFF` cards and soft ambient shadows) and an intimate Dark mode (`#0B0F19` deep obsidian with `#131B2E` slate cards and glowing accents).
+
+On mobile, the application behaves like a native iOS/Android client with a sticky bottom navigation bar, safe-area inset protection, haptic-friendly tap targets (>= 44px), and a central quick-action trigger. On desktop, it gracefully expands into a balanced, responsive multi-column workspace.
 
 Depth is achieved not through heavy drop shadows, but through deliberate tonal layering of deep zinc surfaces (`#09090b` canvas to `#18181b` card surfaces to `#27272a` interactive elements). Micro-interactions are restrained yet tactile, employing subtle scale presses and crisp transitions that provide immediate physical feedback without breaking concentration.
 

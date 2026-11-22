@@ -22,3 +22,8 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Impeccable binaries
+.impeccable/bin/
+.agent/**/bin/
+
