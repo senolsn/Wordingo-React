@@ -30,17 +30,67 @@ import {
   Settings,
   Plus,
   Target,
-  ShieldCheck
+  ShieldCheck,
+  Smartphone,
+  Download
 } from 'lucide-react';
 import { LanguageBadge } from './components/LanguageBadge';
 import { ConfirmDialog } from './components/ConfirmDialog';
 import { DailyGoalModal } from './components/DailyGoalModal';
+import { PwaInstallModal } from './components/PwaInstallModal';
 
 const App: React.FC = () => {
   const [session, setSession] = useState<any>(null);
   const [loadingAuth, setLoadingAuth] = useState(true);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [isGoalModalOpen, setIsGoalModalOpen] = useState(false);
+  const [isPwaModalOpen, setIsPwaModalOpen] = useState(false);
+  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+  const [isStandalone, setIsStandalone] = useState<boolean>(() => {
+    try {
+      return (
+        window.matchMedia('(display-mode: standalone)').matches ||
+        (window.navigator as any).standalone === true
+      );
+    } catch {
+      return false;
+    }
+  });
+
+  // PWA Install Prompt Listener
+  useEffect(() => {
+    const handleBeforeInstallPrompt = (e: Event) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+    };
+
+    const handleAppInstalled = () => {
+      setIsStandalone(true);
+      setDeferredPrompt(null);
+    };
+
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    window.addEventListener('appinstalled', handleAppInstalled);
+
+    return () => {
+      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+      window.removeEventListener('appinstalled', handleAppInstalled);
+    };
+  }, []);
+
+  const handleOpenPwaInstall = () => {
+    if (deferredPrompt) {
+      deferredPrompt.prompt();
+      deferredPrompt.userChoice.then((choiceResult: any) => {
+        if (choiceResult && choiceResult.outcome === 'accepted') {
+          setDeferredPrompt(null);
+          setIsStandalone(true);
+        }
+      });
+    } else {
+      setIsPwaModalOpen(true);
+    }
+  };
 
   // Theme Management (Light vs Dark)
   const [theme, setTheme] = useState<'light' | 'dark'>(() => {
@@ -1319,7 +1369,67 @@ const App: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Grup 4: Oturum ve Çıkış */}
+                {/* Grup 4: Cihaza Kurulum & PWA */}
+                <div className="space-y-1.5">
+                  <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider px-1">
+                    Cihaza Kurulum & PWA
+                  </span>
+                  <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl overflow-hidden shadow-sm divide-y divide-slate-100 dark:divide-slate-800/70">
+                    <button
+                      type="button"
+                      onClick={handleOpenPwaInstall}
+                      className="w-full p-3.5 sm:p-4 flex items-center justify-between gap-3 text-left hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors active:scale-[0.99] min-h-[52px]"
+                      aria-label="Uygulamayı ana ekrana ekle veya cihazına kur"
+                    >
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div className="w-8 h-8 rounded-xl bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0">
+                          <Smartphone size={16} />
+                        </div>
+                        <div className="min-w-0">
+                          <span className="text-xs sm:text-sm font-semibold text-slate-900 dark:text-white block">
+                            Ana Ekrana Ekle (PWA)
+                          </span>
+                          <span className="text-xs text-slate-500 dark:text-slate-400">
+                            {isStandalone
+                              ? 'Uygulama ana ekran modunda çalışıyor'
+                              : 'Tarayıcı çubuğu olmadan tam ekran mobil deneyim'}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2 shrink-0">
+                        <span className={`px-2.5 py-1 rounded-lg text-xs font-semibold ${
+                          isStandalone
+                            ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 border border-emerald-200/50 dark:border-emerald-900/50'
+                            : 'bg-blue-600 text-white shadow-sm'
+                        }`}>
+                          {isStandalone ? 'Kurulu ✓' : 'Yükle 📲'}
+                        </span>
+                        {!isStandalone && <ChevronRight size={15} className="text-slate-400" />}
+                      </div>
+                    </button>
+
+                    <div className="w-full p-3.5 sm:p-4 flex items-center justify-between gap-3 text-left min-h-[52px]">
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div className="w-8 h-8 rounded-xl bg-indigo-50 dark:bg-indigo-950/40 text-indigo-500 flex items-center justify-center shrink-0">
+                          <CheckCircle2 size={16} />
+                        </div>
+                        <div className="min-w-0">
+                          <span className="text-xs sm:text-sm font-semibold text-slate-900 dark:text-white block">
+                            Çevrimdışı Önbellek (Offline Cache)
+                          </span>
+                          <span className="text-xs text-slate-500 dark:text-slate-400">
+                            Service Worker ve arayüz kaynakları önbelleğe alındı
+                          </span>
+                        </div>
+                      </div>
+                      <span className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 shrink-0">
+                        Aktif ✓
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Grup 5: Oturum ve Çıkış */}
                 <div className="space-y-1.5 pt-1">
                   <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl overflow-hidden shadow-sm">
                     <button
@@ -1447,6 +1557,21 @@ const App: React.FC = () => {
         currentGoal={userProfile?.daily_goal_words ?? 20}
         onSave={handleSaveDailyGoal}
         onClose={() => setIsGoalModalOpen(false)}
+      />
+
+      {/* PWA Install Guide Modal */}
+      <PwaInstallModal
+        isOpen={isPwaModalOpen}
+        onClose={() => setIsPwaModalOpen(false)}
+        deferredPrompt={deferredPrompt}
+        onInstallSuccess={() => {
+          setIsStandalone(true);
+          setNotification({
+            type: 'success',
+            title: 'Harika! 🎉',
+            message: 'Wordingo başarıyla ana ekranınıza eklendi.'
+          });
+        }}
       />
     </div>
   );
