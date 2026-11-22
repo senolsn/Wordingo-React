@@ -1,6 +1,10 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
+import { registerSW } from 'virtual:pwa-register';
+
+// PWA Service Worker Otomatik Kayıt ve Güncelleme Takibi
+registerSW({ immediate: true });
 
 const rootElement = document.getElementById('root');
 if (!rootElement) {

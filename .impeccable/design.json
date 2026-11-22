@@ -1,0 +1,159 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-11-22T13:43:00.000Z",
+  "title": "Design System: Wordingo",
+  "extensions": {
+    "colorMeta": {
+      "primary": {
+        "role": "primary",
+        "displayName": "Royal Blue",
+        "canonical": "#2563eb",
+        "tonalRamp": ["#eff6ff", "#dbeafe", "#3b82f6", "#2563eb", "#1d4ed8"]
+      },
+      "neutral-bg": {
+        "role": "neutral",
+        "displayName": "Slate Light & Dark Canvas",
+        "canonical": "#f4f7fb",
+        "tonalRamp": ["#ffffff", "#f8fafc", "#f4f7fb", "#131b2e", "#0b0f19"]
+      },
+      "surface": {
+        "role": "neutral",
+        "displayName": "Surface Card",
+        "canonical": "#ffffff",
+        "tonalRamp": ["#ffffff", "#f8fafc", "#e2e8f0", "#1e293b", "#131b2e"]
+      },
+      "surface-elevated": {
+        "role": "neutral",
+        "displayName": "Surface Interactive",
+        "canonical": "#27272a",
+        "tonalRamp": ["#3f3f46", "#313136", "#27272a", "#1f1f23", "#18181b"]
+      },
+      "status-success": {
+        "role": "accent",
+        "displayName": "Correct Emerald",
+        "canonical": "#22c55e",
+        "tonalRamp": ["#86efac", "#4ade80", "#22c55e", "#16a34a", "#15803d"]
+      },
+      "status-error": {
+        "role": "accent",
+        "displayName": "Error Rose",
+        "canonical": "#ef4444",
+        "tonalRamp": ["#fca5a5", "#f87171", "#ef4444", "#dc2626", "#b91c1c"]
+      }
+    },
+    "typographyMeta": {
+      "display": {
+        "displayName": "Display Hero",
+        "purpose": "Large vocabulary target words and primary quiz challenges."
+      },
+      "headline": {
+        "displayName": "Deck Headline",
+        "purpose": "Deck headers and modal titles."
+      },
+      "body": {
+        "displayName": "Body Reading",
+        "purpose": "Translations, explanations, and descriptive text."
+      },
+      "label": {
+        "displayName": "Meta Label",
+        "purpose": "CEFR level badges, stats, and pill indicators."
+      }
+    },
+    "shadows": [
+      {
+        "name": "modal-elevation",
+        "value": "0 10px 40px rgba(0, 0, 0, 0.4)",
+        "purpose": "Modal dialogs and transient toast overlays."
+      },
+      {
+        "name": "fab-elevation",
+        "value": "0 4px 20px rgba(0, 0, 0, 0.3)",
+        "purpose": "Floating action buttons over scrollable content."
+      }
+    ],
+    "motion": [
+      {
+        "name": "ease-standard",
+        "value": "cubic-bezier(0.4, 0, 0.2, 1)",
+        "purpose": "Mobile bottom sheet slides and modal scale transitions."
+      },
+      {
+        "name": "touch-press",
+        "value": "transform 0.15s ease",
+        "purpose": "Tactile micro-interaction on button/card tap."
+      }
+    ],
+    "breakpoints": [
+      { "name": "xs", "value": "375px" },
+      { "name": "sm", "value": "640px" },
+      { "name": "md", "value": "768px" },
+      { "name": "lg", "value": "1024px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "High-contrast action button for primary submissions and start triggers.",
+      "html": "<button class=\"ds-btn-primary\">START QUIZ</button>",
+      "css": ".ds-btn-primary { display: inline-flex; align-items: center; justify-content: center; background: #fafafa; color: #18181b; padding: 12px 20px; min-height: 44px; border-radius: 12px; font-family: 'Inter', sans-serif; font-size: 15px; font-weight: 600; border: none; cursor: pointer; transition: transform 0.15s ease, background-color 0.15s ease; } .ds-btn-primary:hover { background: #e4e4e7; } .ds-btn-primary:active { transform: scale(0.96); }"
+    },
+    {
+      "name": "Secondary Button",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "Subtle interactive action button for secondary commands.",
+      "html": "<button class=\"ds-btn-secondary\">Edit Words</button>",
+      "css": ".ds-btn-secondary { display: inline-flex; align-items: center; justify-content: center; background: #27272a; color: #fafafa; border: 1px solid #3f3f46; padding: 12px 20px; min-height: 44px; border-radius: 12px; font-family: 'Inter', sans-serif; font-size: 15px; font-weight: 500; cursor: pointer; transition: transform 0.15s ease, background-color 0.15s ease; } .ds-btn-secondary:hover { background: #3f3f46; } .ds-btn-secondary:active { transform: scale(0.96); }"
+    },
+    {
+      "name": "Study Deck Card",
+      "kind": "card",
+      "refersTo": "card",
+      "description": "Vocabulary group container with level badge and meta count.",
+      "html": "<div class=\"ds-card\"><div class=\"ds-card-header\"><span class=\"ds-badge\">B2</span><span class=\"ds-meta\">15 Words</span></div><div class=\"ds-card-title\">Advanced Business Idioms</div></div>",
+      "css": ".ds-card { background: #18181b; border: 1px solid #27272a; border-radius: 16px; padding: 16px; font-family: 'Inter', sans-serif; transition: transform 0.2s ease, background 0.2s ease; cursor: pointer; } .ds-card:active { transform: scale(0.98); background: #1f1f23; } .ds-card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; } .ds-badge { background: #27272a; color: #fafafa; border: 1px solid #3f3f46; font-size: 12px; font-weight: 600; padding: 4px 10px; border-radius: 20px; } .ds-meta { color: #a1a1aa; font-size: 13px; } .ds-card-title { color: #fafafa; font-size: 17px; font-weight: 600; }"
+    },
+    {
+      "name": "Quiz Option Tile",
+      "kind": "custom",
+      "refersTo": "quiz-option",
+      "description": "Tactile multiple choice tile used during active study quizzes.",
+      "html": "<button class=\"ds-quiz-option\"><span class=\"ds-quiz-key\">A</span><span class=\"ds-quiz-text\">Müzakere etmek</span></button>",
+      "css": ".ds-quiz-option { width: 100%; display: flex; align-items: center; gap: 12px; background: #18181b; border: 1px solid #27272a; border-radius: 12px; padding: 16px; color: #fafafa; font-family: 'Inter', sans-serif; font-size: 16px; cursor: pointer; text-align: left; transition: all 0.2s ease; } .ds-quiz-option:hover { border-color: #3f3f46; background: #1f1f23; } .ds-quiz-key { width: 28px; height: 28px; display: inline-flex; align-items: center; justify-content: center; background: #27272a; border-radius: 8px; font-size: 13px; font-weight: 600; color: #a1a1aa; } .ds-quiz-text { font-weight: 500; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Minimalist Study Deck",
+    "overview": "Wordingo strips away AI visual clichés in favor of a quiet, purposeful monochrome atmosphere. Surfaces step through zinc tones (#09090b -> #18181b -> #27272a) and color is restricted solely to learning state feedback.",
+    "keyCharacteristics": [
+      "Monochrome foundation in deep zinc tones",
+      "Tactile 12-16px rounded corners with springy active presses",
+      "Strict functional color accenting (Emerald/Rose for quiz results)",
+      "Ergonomic mobile-first 44px minimum touch targets"
+    ],
+    "rules": [
+      {
+        "name": "The Functional Accent Rule",
+        "body": "Color accents exist only to inform (correct/wrong/status), never to decorate. No gradient or neon cards.",
+        "section": "colors"
+      },
+      {
+        "name": "The Tonal Stepping Rule",
+        "body": "Depth is created by moving up the zinc scale (#09090b canvas -> #18181b card -> #27272a interactive), not soft drop shadows.",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "Do maintain a minimum 44px touch height for all interactive elements.",
+      "Do use tonal progression to indicate elevation.",
+      "Do keep questions and options high-contrast and distraction-free."
+    ],
+    "donts": [
+      "Don't introduce purple-to-cyan gradient cards or glowing decorative borders.",
+      "Don't nest cards inside cards with redundant strokes.",
+      "Don't use input font sizes smaller than 16px on mobile."
+    ]
+  }
+}
