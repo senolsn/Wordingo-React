@@ -237,7 +237,7 @@ const WordGroupManager: React.FC<WordGroupManagerProps> = ({
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Deste veya kelime arayın..."
+            placeholder="Kelime grubu veya kelime arayın..."
             className="w-full pl-10 pr-9 py-2.5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 text-slate-900 dark:text-white placeholder-slate-400 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500/30 transition-all shadow-sm"
           />
           {searchQuery && (
@@ -301,7 +301,7 @@ const WordGroupManager: React.FC<WordGroupManagerProps> = ({
             }`}
           >
             <Sparkles size={11} />
-            AI Deste
+            AI Grup
           </button>
         </div>
       </div>
@@ -312,10 +312,10 @@ const WordGroupManager: React.FC<WordGroupManagerProps> = ({
         <div className="hidden sm:flex items-center justify-between">
           <div>
             <h1 className="text-xl font-bold tracking-tight text-slate-900 dark:text-white">
-              Kelime Desteleri
+              Kelime Grupları
             </h1>
             <p className="text-xs text-slate-500 dark:text-slate-400">
-              {groups.length} kayıtlı deste · Çalışmak istediğiniz desteyi seçin
+              {groups.length} kayıtlı grup · Çalışmak istediğiniz kelime grubunu seçin
             </p>
           </div>
 
@@ -348,7 +348,7 @@ const WordGroupManager: React.FC<WordGroupManagerProps> = ({
         <div>
           <div className="mb-2.5 px-1">
             <h2 className="text-sm font-semibold text-slate-500 dark:text-slate-400">
-              {searchQuery ? `Arama Sonuçları (${filteredGroups.length})` : 'Tüm Desteler'}
+              {searchQuery ? `Arama Sonuçları (${filteredGroups.length})` : 'Tüm Kelime Grupları'}
             </h2>
           </div>
 
@@ -356,19 +356,19 @@ const WordGroupManager: React.FC<WordGroupManagerProps> = ({
             <div className="py-14 bg-white dark:bg-slate-900 rounded-2xl border border-dashed border-slate-200 dark:border-slate-800 text-center px-4">
               <BookOpen size={24} className="text-slate-400 mx-auto mb-2" />
               <h3 className="text-sm font-semibold text-slate-800 dark:text-slate-200 mb-1">
-                {searchQuery ? 'Eşleşen deste bulunamadı' : 'Henüz kelime destesi oluşturmadınız'}
+                {searchQuery ? 'Eşleşen kelime grubu bulunamadı' : 'Henüz kelime grubu oluşturmadınız'}
               </h3>
               <p className="text-xs text-slate-500 mb-4">
                 {searchQuery
-                  ? 'Farklı bir arama yapabilir veya yeni deste ekleyebilirsiniz.'
-                  : 'AI ile otomatik veya manuel olarak ilk kelime destenizi ekleyin.'}
+                  ? 'Farklı bir arama yapabilir veya yeni kelime grubu ekleyebilirsiniz.'
+                  : 'AI ile otomatik veya manuel olarak ilk kelime grubunuzu ekleyin.'}
               </p>
               <button
                 onClick={() => setShowAIModal(true)}
                 className="inline-flex items-center gap-1.5 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl text-xs font-semibold"
               >
                 <Wand2 size={13} />
-                AI ile Yeni Deste
+                AI ile Yeni Grup
               </button>
             </div>
           ) : (
@@ -390,7 +390,7 @@ const WordGroupManager: React.FC<WordGroupManagerProps> = ({
                         onSelectGroup(group);
                       }
                     }}
-                    aria-label={`${group.name} destesini incele ve düzenle`}
+                    aria-label={`${group.name} grubunu incele ve düzenle`}
                   >
                     {/* Deck Icon Tile */}
                     <div
@@ -439,8 +439,8 @@ const WordGroupManager: React.FC<WordGroupManagerProps> = ({
                       type="button"
                       onClick={() => onSelectGroup(group)}
                       className="flex-1 sm:flex-initial px-3.5 py-2 min-h-[40px] rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-200/60 dark:border-slate-700/60 transition-all active:scale-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
-                      title="Desteyi ve Kelimeleri Düzenle"
-                      aria-label={`${group.name} destesini düzenle`}
+                      title="Grubu ve Kelimeleri Düzenle"
+                      aria-label={`${group.name} grubunu düzenle`}
                     >
                       <Pencil size={13} />
                       <span>Düzenle</span>
@@ -456,8 +456,8 @@ const WordGroupManager: React.FC<WordGroupManagerProps> = ({
                           ? 'bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-600 cursor-not-allowed'
                           : 'bg-blue-50 dark:bg-blue-950/40 hover:bg-blue-100 dark:hover:bg-blue-900/40 text-blue-700 dark:text-blue-400 border border-blue-200/60 dark:border-blue-800/60 active:scale-95'
                       }`}
-                      title={group.words.length < 1 ? "Pratik için desteye kelime ekleyin" : "Kelime Kartı Pratiği"}
-                      aria-label={`${group.name} destesinde flashcard pratiği başlat`}
+                      title={group.words.length < 1 ? "Pratik için gruba kelime ekleyin" : "Kelime Kartı Pratiği"}
+                      aria-label={`${group.name} grubunda flashcard pratiği başlat`}
                     >
                       <BookOpen size={13} />
                       <span>Pratik</span>
@@ -473,8 +473,8 @@ const WordGroupManager: React.FC<WordGroupManagerProps> = ({
                           ? 'bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-600 cursor-not-allowed'
                           : 'bg-blue-600 hover:bg-blue-700 text-white shadow-sm shadow-blue-500/20 active:scale-95'
                       }`}
-                      title={group.words.length < 1 ? "Quiz başlatmak için desteye kelime ekleyin" : "Quiz Başlat"}
-                      aria-label={`${group.name} destesinde quiz başlat`}
+                      title={group.words.length < 1 ? "Quiz başlatmak için gruba kelime ekleyin" : "Quiz Başlat"}
+                      aria-label={`${group.name} grubunda quiz başlat`}
                     >
                       <Play size={12} className="fill-current" />
                       <span>Quiz</span>
@@ -488,8 +488,8 @@ const WordGroupManager: React.FC<WordGroupManagerProps> = ({
                         onDeleteGroup(group.id);
                       }}
                       className="w-10 h-10 min-w-[40px] min-h-[40px] flex items-center justify-center text-slate-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-500 shrink-0"
-                      title="Desteyi Sil"
-                      aria-label={`${group.name} destesini sil`}
+                      title="Kelime Grubunu Sil"
+                      aria-label={`${group.name} grubunu sil`}
                     >
                       <Trash2 size={16} />
                     </button>
@@ -520,7 +520,7 @@ const WordGroupManager: React.FC<WordGroupManagerProps> = ({
                   <Wand2 size={18} />
                 </div>
                 <div>
-                  <h4 className="text-xs font-bold text-slate-900 dark:text-white">AI ile Deste Üret</h4>
+                  <h4 className="text-xs font-bold text-slate-900 dark:text-white">AI ile Kelime Grubu Üret</h4>
                   <p className="text-xs text-slate-500">Konu belirterek otomatik kelime listesi oluşturun</p>
                 </div>
               </button>
@@ -533,7 +533,7 @@ const WordGroupManager: React.FC<WordGroupManagerProps> = ({
                   <Plus size={18} />
                 </div>
                 <div>
-                  <h4 className="text-xs font-bold text-slate-900 dark:text-white">Manuel Deste</h4>
+                  <h4 className="text-xs font-bold text-slate-900 dark:text-white">Manuel Kelime Grubu</h4>
                   <p className="text-xs text-slate-500">Kendi kelimelerinizi tek tek ekleyin</p>
                 </div>
               </button>
@@ -570,10 +570,10 @@ const WordGroupManager: React.FC<WordGroupManagerProps> = ({
             onClick={() => setShowCreateModal(false)}
           />
           <div className="relative w-full sm:max-w-md bg-white dark:bg-slate-900 border-t sm:border border-slate-200 dark:border-slate-800 rounded-t-3xl sm:rounded-2xl p-5 animate-slide-up sm:animate-scale-in safe-area-inset-bottom shadow-xl">
-            <h2 className="text-base font-bold text-slate-900 dark:text-white mb-3">Yeni Deste</h2>
+            <h2 className="text-base font-bold text-slate-900 dark:text-white mb-3">Yeni Kelime Grubu</h2>
             <div className="mb-4">
               <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">
-                Deste Adı
+                Kelime Grubu Adı
               </label>
               <input
                 type="text"

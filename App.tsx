@@ -4,6 +4,7 @@ import WordGroupManager from './components/WordGroupManager';
 import WordGroupEditor from './components/WordGroupEditor';
 import Quiz from './components/Quiz';
 import FlashcardPractice from './components/FlashcardPractice';
+import IrregularVerbsPractice from './components/IrregularVerbsPractice';
 import { Auth } from './components/Auth';
 import { supabase } from './lib/supabaseClient';
 import { TTSAccent, getStoredAccent, setStoredAccent } from './services/ttsService';
@@ -175,7 +176,7 @@ const App: React.FC = () => {
     }
   };
 
-  const [view, setView] = useState<ViewState>(ViewState.DECKS);
+  const [view, setView] = useState<ViewState>(ViewState.DASHBOARD);
   const [isAddDeckModalOpen, setIsAddDeckModalOpen] = useState(false);
   const [groups, setGroups] = useState<WordGroup[]>([]);
   const [activeGroup, setActiveGroup] = useState<WordGroup | null>(null);
@@ -413,13 +414,13 @@ const App: React.FC = () => {
 
   const handleDeleteGroup = (id: string) => {
     const groupToDelete = groups.find((g) => g.id === id);
-    const groupTitle = groupToDelete?.name || 'Bu deste';
+    const groupTitle = groupToDelete?.name || 'Bu kelime grubu';
 
     setModalConfig({
       isOpen: true,
-      title: 'Desteyi Sil',
-      description: `"${groupTitle}" destesini ve içerisindeki tüm kelimeleri kalıcı olarak silmek istediğinize emin misiniz?`,
-      confirmLabel: 'Desteyi Sil',
+      title: 'Kelime Grubunu Sil',
+      description: `"${groupTitle}" kelime grubunu ve içerisindeki tüm kelimeleri kalıcı olarak silmek istediğinize emin misiniz?`,
+      confirmLabel: 'Kelime Grubunu Sil',
       cancelLabel: 'Vazgeç',
       isDestructive: true,
       showCancel: true,
@@ -503,7 +504,7 @@ const App: React.FC = () => {
     const mistakeGroup: WordGroup = {
       id: 'mistakes-review',
       name: '🎯 Hatalı Kelimeler Tekrarı',
-      description: 'Daha önce yanlış bilinen kelimelerden dinamik deste',
+      description: 'Daha önce yanlış bilinen kelimelerden dinamik kelime grubu',
       level: 'Mix',
       words: uniqueMistakes,
       createdAt: Date.now()
@@ -710,14 +711,14 @@ const App: React.FC = () => {
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white font-sans antialiased">
       {/* Top Header - Visible on all non-quiz pages */}
-      {view !== ViewState.QUIZ && view !== ViewState.FLASHCARD && (
+      {view !== ViewState.QUIZ && view !== ViewState.FLASHCARD && view !== ViewState.IRREGULAR_VERBS && (
         <header className="bg-white/85 dark:bg-slate-900/85 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800/80 sticky top-0 z-30 safe-area-inset-top transition-colors">
           <div className="max-w-7xl mx-auto px-4 sm:px-6">
             <div className="h-16 flex items-center justify-between gap-3 sm:gap-4">
               {/* Left: Brand Logo & Web Desktop Tabs */}
               <div className="flex items-center gap-6">
                 <button
-                  onClick={() => setView(ViewState.DECKS)}
+                  onClick={() => setView(ViewState.DASHBOARD)}
                   className="flex items-center gap-2.5 group text-left"
                 >
                   <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-2xl bg-blue-600 text-white flex items-center justify-center shadow-md shadow-blue-500/25 group-hover:bg-blue-700 transition-all shrink-0">
@@ -736,16 +737,6 @@ const App: React.FC = () => {
                 {/* Desktop Tabs */}
                 <nav className="hidden md:flex items-center gap-1.5 ml-2">
                   <button
-                    onClick={() => setView(ViewState.DECKS)}
-                    className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all ${
-                      view === ViewState.DECKS
-                        ? 'bg-blue-50 dark:bg-blue-950/50 text-blue-600 dark:text-blue-400'
-                        : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/60'
-                    }`}
-                  >
-                    Desteler
-                  </button>
-                  <button
                     onClick={() => setView(ViewState.DASHBOARD)}
                     className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all ${
                       view === ViewState.DASHBOARD
@@ -754,6 +745,16 @@ const App: React.FC = () => {
                     }`}
                   >
                     Dashboard
+                  </button>
+                  <button
+                    onClick={() => setView(ViewState.DECKS)}
+                    className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-all ${
+                      view === ViewState.DECKS
+                        ? 'bg-blue-50 dark:bg-blue-950/50 text-blue-600 dark:text-blue-400'
+                        : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/60'
+                    }`}
+                  >
+                    Kelime Grupları
                   </button>
                   <button
                     onClick={() => setView(ViewState.MISTAKES)}
@@ -793,15 +794,6 @@ const App: React.FC = () => {
                   <span>{totalMastery} Quiz</span>
                 </div>
 
-                {/* Quick Quiz Action (Desktop) */}
-                <button
-                  onClick={handleQuickQuiz}
-                  className="hidden lg:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-sm shadow-blue-500/25 transition-all active:scale-98"
-                >
-                  <Play size={12} className="fill-current" />
-                  <span>Hızlı Quiz</span>
-                </button>
-
                 {/* User Avatar & Ayarlar Girişi (Sadece Masaüstünde, Mobilde Alt Bar Ayarlar Kullanılır) */}
                 <button
                   onClick={() => setView(ViewState.SETTINGS)}
@@ -830,7 +822,7 @@ const App: React.FC = () => {
             <div className="w-12 h-12 rounded-2xl bg-blue-50 dark:bg-blue-950/50 text-blue-600 flex items-center justify-center mb-3">
               <Loader2 className="animate-spin" size={24} />
             </div>
-            <p className="text-xs text-slate-500 font-medium">Desteler yükleniyor...</p>
+            <p className="text-xs text-slate-500 font-medium">Kelime grupları yükleniyor...</p>
           </div>
         ) : (
           <>
@@ -849,154 +841,261 @@ const App: React.FC = () => {
               />
             )}
 
-            {/* DASHBOARD VIEW (Learning Progress & Metrics) */}
+            {/* DASHBOARD VIEW (Minimalist Learning Hub) */}
             {view === ViewState.DASHBOARD && (
-              <div className="max-w-4xl mx-auto px-4 sm:px-6 py-6 pb-24 sm:pb-16 space-y-5 animate-fade-in">
-                {/* Header / Overview */}
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+              <div className="max-w-4xl mx-auto px-4 sm:px-6 py-6 pb-24 sm:pb-16 space-y-6 animate-fade-in">
+                {/* Minimal Header */}
+                <div className="flex items-center justify-between">
                   <div>
                     <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
-                      Öğrenme Dashboard'ı
+                      Genel Bakış
                     </h1>
                     <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                      Günlük çalışma hedefleriniz ve genel öğrenim performansınız
+                      {streakDays > 0 ? `${streakDays} günlük seridesiniz` : 'Öğrenme yolculuğunuz devam ediyor'} · {groups.length} kayıtlı kelime grubu
                     </p>
                   </div>
+                  <button
+                    onClick={() => setView(ViewState.DECKS)}
+                    className="text-xs font-semibold text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 flex items-center gap-1 transition-colors"
+                  >
+                    <span>Tüm Gruplar</span>
+                    <ChevronRight size={14} />
+                  </button>
+                </div>
 
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={handleQuickQuiz}
-                      className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold shadow-sm transition-all active:scale-98"
-                    >
-                      <Play size={13} className="fill-current" />
-                      <span>Hızlı Pratik Başlat</span>
-                    </button>
-                    {totalMistakes > 0 && (
-                      <button
-                        onClick={handleStartMistakesQuiz}
-                        className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 border border-rose-200/60 dark:border-rose-900/50 hover:bg-rose-100 text-xs font-semibold transition-all active:scale-98"
-                      >
-                        <RotateCcw size={13} />
-                        <span>Hataları Tekrarla ({totalMistakes})</span>
-                      </button>
-                    )}
+                {/* 4 Minimal Metric Cards */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  {/* Metric: Streak */}
+                  <div className="bg-white dark:bg-slate-900/90 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-3.5 sm:p-4 transition-all">
+                    <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 mb-2">
+                      <span className="text-[11px] font-medium">Seri</span>
+                      <Flame size={15} className="text-amber-500 fill-amber-400/30" />
+                    </div>
+                    <div className="flex items-baseline gap-1">
+                      <span className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">{streakDays}</span>
+                      <span className="text-xs text-slate-400 font-normal">gün</span>
+                    </div>
+                  </div>
+
+                  {/* Metric: Study Time */}
+                  <div className="bg-white dark:bg-slate-900/90 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-3.5 sm:p-4 transition-all">
+                    <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 mb-2">
+                      <span className="text-[11px] font-medium">Çalışma</span>
+                      <Clock size={15} className="text-blue-500" />
+                    </div>
+                    <div className="flex items-baseline gap-1">
+                      <span className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">{studyMinutes > 0 ? studyMinutes : 1}</span>
+                      <span className="text-xs text-slate-400 font-normal">dk</span>
+                    </div>
+                  </div>
+
+                  {/* Metric: Mastery */}
+                  <div className="bg-white dark:bg-slate-900/90 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-3.5 sm:p-4 transition-all">
+                    <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 mb-2">
+                      <span className="text-[11px] font-medium">Kusursuz</span>
+                      <Trophy size={15} className="text-emerald-500" />
+                    </div>
+                    <div className="flex items-baseline gap-1">
+                      <span className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">{totalMastery}</span>
+                      <span className="text-xs text-slate-400 font-normal">quiz</span>
+                    </div>
+                  </div>
+
+                  {/* Metric: Total Words */}
+                  <div className="bg-white dark:bg-slate-900/90 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-3.5 sm:p-4 transition-all">
+                    <div className="flex items-center justify-between text-slate-500 dark:text-slate-400 mb-2">
+                      <span className="text-[11px] font-medium">Kelimeler</span>
+                      <BookOpen size={15} className="text-slate-500 dark:text-slate-400" />
+                    </div>
+                    <div className="flex items-baseline gap-1">
+                      <span className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">{totalWords}</span>
+                      <span className="text-xs text-slate-400 font-normal">toplam</span>
+                    </div>
                   </div>
                 </div>
 
-                {/* 4 Core Metric Cards (Notion Dark Style) */}
-                <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-                  {/* Metric 1: Streak */}
-                  <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-4 sm:p-5 shadow-sm transition-all hover:border-slate-300 dark:hover:border-slate-700">
-                    <div className="w-9 h-9 rounded-xl bg-amber-50 dark:bg-amber-950/50 text-amber-500 flex items-center justify-center mb-3">
-                      <Flame size={18} className="fill-amber-400" />
-                    </div>
-                    <span className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white block tracking-tight">
-                      {streakDays} <span className="text-xs font-normal text-slate-500 dark:text-slate-400">Gün</span>
-                    </span>
-                    <span className="text-xs text-slate-600 dark:text-slate-400 font-medium mt-0.5 block">
-                      Günlük Çalışma Serisi
-                    </span>
-                  </div>
-
-                  {/* Metric 2: Study Time */}
-                  <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-4 sm:p-5 shadow-sm transition-all hover:border-slate-300 dark:hover:border-slate-700">
-                    <div className="w-9 h-9 rounded-xl bg-blue-50 dark:bg-blue-950/50 text-blue-500 flex items-center justify-center mb-3">
-                      <Clock size={18} />
-                    </div>
-                    <span className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white block tracking-tight">
-                      {studyMinutes > 0 ? studyMinutes : 1} <span className="text-xs font-normal text-slate-500 dark:text-slate-400">Dk</span>
-                    </span>
-                    <span className="text-xs text-slate-600 dark:text-slate-400 font-medium mt-0.5 block">
-                      Toplam Çalışma Süresi
-                    </span>
-                  </div>
-
-                  {/* Metric 3: Mastery Quizzes */}
-                  <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-4 sm:p-5 shadow-sm transition-all hover:border-slate-300 dark:hover:border-slate-700">
-                    <div className="w-9 h-9 rounded-xl bg-emerald-50 dark:bg-emerald-950/50 text-emerald-500 flex items-center justify-center mb-3">
-                      <Trophy size={18} />
-                    </div>
-                    <span className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white block tracking-tight">
-                      {totalMastery} <span className="text-xs font-normal text-slate-500 dark:text-slate-400">Quiz</span>
-                    </span>
-                    <span className="text-xs text-slate-600 dark:text-slate-400 font-medium mt-0.5 block">
-                      Kusursuz Tamamlama
-                    </span>
-                  </div>
-
-                  {/* Metric 4: Total Words */}
-                  <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-4 sm:p-5 shadow-sm transition-all hover:border-slate-300 dark:hover:border-slate-700">
-                    <div className="w-9 h-9 rounded-xl bg-indigo-50 dark:bg-indigo-950/50 text-indigo-500 flex items-center justify-center mb-3">
-                      <BookOpen size={18} />
-                    </div>
-                    <span className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white block tracking-tight">
-                      {totalWords} <span className="text-xs font-normal text-slate-500 dark:text-slate-400">Kelime</span>
-                    </span>
-                    <span className="text-xs text-slate-600 dark:text-slate-400 font-medium mt-0.5 block">
-                      {groups.length} Deste İçinde
-                    </span>
-                  </div>
-                </div>
-
-                {/* Daily Goal & Activity Section */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  {/* Daily Goal Card */}
-                  <div className="md:col-span-2 bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-5 shadow-sm">
-                    <div className="flex items-center justify-between mb-3">
-                      <div className="flex items-center gap-2">
-                        <Target size={16} className="text-blue-500" />
-                        <h2 className="text-sm font-bold text-slate-900 dark:text-white">
-                          Günlük Öğrenme Hedefi
-                        </h2>
+                {/* Daily Goal & Mistakes Summary */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+                  {/* Minimal Daily Goal Card */}
+                  <div className="bg-white dark:bg-slate-900/90 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-4 sm:p-5 flex flex-col justify-between">
+                    <div>
+                      <div className="flex items-center justify-between mb-3">
+                        <div className="flex items-center gap-2">
+                          <Target size={15} className="text-blue-600 dark:text-blue-400" />
+                          <h2 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider">
+                            Günlük Hedef
+                          </h2>
+                        </div>
+                        <button
+                          onClick={() => setIsGoalModalOpen(true)}
+                          className="text-[11px] font-semibold text-blue-600 dark:text-blue-400 hover:underline"
+                        >
+                          Hedefi Değiştir
+                        </button>
                       </div>
-                      <span className="text-xs font-bold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/50 px-2 py-0.5 rounded-md border border-blue-200/50 dark:border-blue-900/50">
-                        Hedef: {userProfile?.daily_goal_words ?? 20} Kelime
-                      </span>
-                    </div>
 
-                    <p className="text-xs text-slate-500 dark:text-slate-400 mb-4 leading-relaxed">
-                      Her gün düzenli pratik yaparak kelime hafızanızı kalıcı hale getirin. Quiz çözdükçe ilerleme seviyeniz güncellenecektir.
-                    </p>
-
-                    {/* Progress Bar */}
-                    <div className="space-y-1.5">
-                      <div className="flex items-center justify-between text-xs text-slate-500 font-medium">
-                        <span>Hedef İlerlemesi</span>
-                        <span>%{Math.min(100, Math.round(((userProfile?.study_time_minutes ?? 1) * 5) / (userProfile?.daily_goal_words ?? 20) * 100))}%</span>
+                      <div className="flex items-baseline justify-between mb-2">
+                        <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">
+                          %{Math.min(100, Math.round(((userProfile?.study_time_minutes ?? 1) * 5) / (userProfile?.daily_goal_words ?? 20) * 100))} tamamlandı
+                        </span>
+                        <span className="text-xs text-slate-400">
+                          Hedef: {userProfile?.daily_goal_words ?? 20} kelime
+                        </span>
                       </div>
-                      <div className="h-2.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+
+                      <div className="h-2 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
                         <div
                           className="h-full bg-blue-600 rounded-full transition-all duration-500"
-                          style={{ width: `${Math.min(100, Math.max(15, ((userProfile?.study_time_minutes ?? 1) * 5)))}%` }}
+                          style={{
+                            width: `${Math.min(100, Math.max(12, Math.round(((userProfile?.study_time_minutes ?? 1) * 5) / (userProfile?.daily_goal_words ?? 20) * 100)))}%`
+                          }}
                         />
                       </div>
                     </div>
                   </div>
 
-                  {/* Mistakes Quick Status Card */}
-                  <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-5 shadow-sm flex flex-col justify-between">
-                    <div>
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="text-xs font-bold text-slate-500 dark:text-slate-400">Hatalar Havuzu</span>
-                        <RotateCcw size={14} className="text-rose-500" />
+                  {/* Minimal Mistakes Card */}
+                  <div className="bg-white dark:bg-slate-900/90 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-4 sm:p-5 flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${
+                        totalMistakes > 0
+                          ? 'bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 border border-rose-200/60 dark:border-rose-900/40'
+                          : 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 border border-emerald-200/60 dark:border-emerald-900/40'
+                      }`}>
+                        {totalMistakes > 0 ? <RotateCcw size={18} /> : <CheckCircle2 size={18} />}
                       </div>
-                      <span className="text-2xl font-bold text-slate-900 dark:text-white block">
-                        {totalMistakes} <span className="text-xs font-normal text-slate-500 dark:text-slate-400">Bekleyen</span>
-                      </span>
-                      <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                        {totalMistakes > 0
-                          ? 'Yanlış cevaplanan kelimeleri tekrar ederek kalıcı hafızaya alın.'
-                          : 'Tebrikler! Şu an tekrar bekleyen hatalı kelimeniz bulunmuyor.'}
-                      </p>
+                      <div>
+                        <h2 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider">
+                          Hatalar Havuzu
+                        </h2>
+                        <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                          {totalMistakes > 0
+                            ? `${totalMistakes} kelime tekrar edilmeyi bekliyor`
+                            : 'Tekrar bekleyen hata yok, harika!'}
+                        </p>
+                      </div>
                     </div>
 
+                    {totalMistakes > 0 && (
+                      <button
+                        onClick={() => setView(ViewState.MISTAKES)}
+                        className="px-3 py-1.5 rounded-xl text-xs font-semibold bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/40 dark:hover:bg-rose-900/50 text-rose-600 dark:text-rose-400 transition-colors shrink-0"
+                      >
+                        İncele
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                {/* Recent / Quick Decks List */}
+                <div>
+                  <div className="flex items-center justify-between mb-3 px-1">
+                    <h2 className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                      Kelime Gruplarınız
+                    </h2>
                     <button
-                      onClick={() => setView(ViewState.MISTAKES)}
-                      className="mt-4 w-full py-2 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-semibold transition-colors flex items-center justify-center gap-1.5"
+                      onClick={() => setView(ViewState.DECKS)}
+                      className="text-xs text-slate-500 hover:text-slate-900 dark:hover:text-white transition-colors"
                     >
-                      <span>Hataları İncele</span>
-                      <ChevronRight size={13} />
+                      Tümünü Gör ({groups.length})
                     </button>
+                  </div>
+
+                  {groups.length === 0 ? (
+                    <div className="p-8 text-center rounded-2xl border border-dashed border-slate-200 dark:border-slate-800 bg-white/50 dark:bg-slate-900/50">
+                      <p className="text-xs text-slate-500 mb-3">Henüz bir kelime grubu oluşturmadınız.</p>
+                      <button
+                        onClick={handleBottomBarAddDeck}
+                        className="px-3.5 py-1.5 rounded-xl bg-blue-600 text-white text-xs font-semibold hover:bg-blue-700 transition-colors"
+                      >
+                        İlk Grubunu Ekle
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      {groups.slice(0, 3).map((group) => (
+                        <div
+                          key={group.id}
+                          onClick={() => handleSelectGroup(group)}
+                          className="bg-white dark:bg-slate-900/90 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-3 sm:p-3.5 flex items-center justify-between gap-3 hover:border-slate-300 dark:hover:border-slate-700 cursor-pointer transition-all group"
+                        >
+                          <div className="flex items-center gap-3 min-w-0">
+                            <div className="w-8 h-8 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 flex items-center justify-center text-xs font-bold shrink-0">
+                              {group.level || 'Mix'}
+                            </div>
+                            <div className="min-w-0">
+                              <h3 className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white truncate group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                                {group.name}
+                              </h3>
+                              <span className="text-[11px] text-slate-400">
+                                {group.words.length} kelime
+                              </span>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-1.5 shrink-0" onClick={(e) => e.stopPropagation()}>
+                            <button
+                              type="button"
+                              onClick={() => handleStartFlashcard(group)}
+                              disabled={group.words.length < 1}
+                              className="px-2.5 py-1.5 rounded-lg text-xs font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                              title="Pratik Yap"
+                            >
+                              Pratik
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleStartQuiz(group)}
+                              disabled={group.words.length < 1}
+                              className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white transition-colors flex items-center gap-1"
+                              title="Quiz Başlat"
+                            >
+                              <Play size={11} className="fill-current" />
+                              <span>Quiz</span>
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Irregular Verbs Hub Card */}
+                <div
+                  onClick={() => setView(ViewState.IRREGULAR_VERBS)}
+                  className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-4 sm:p-5 flex items-center justify-between gap-4 hover:border-blue-400 dark:hover:border-blue-500 hover:shadow-md cursor-pointer transition-all active:scale-98 group"
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      setView(ViewState.IRREGULAR_VERBS);
+                    }
+                  }}
+                  aria-label="Irregular Verbs (Düzensiz Fiiller) çalışmasına git"
+                >
+                  <div className="flex items-center gap-3.5 min-w-0">
+                    <div className="w-11 h-11 rounded-2xl bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0 border border-blue-200/60 dark:border-blue-800/60 group-hover:scale-105 transition-transform">
+                      <Sparkles size={20} />
+                    </div>
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <h2 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white tracking-tight group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                          Irregular Verbs
+                        </h2>
+                        <span className="px-2 py-0.5 rounded-full bg-blue-50 dark:bg-blue-950/50 text-blue-600 dark:text-blue-400 text-[10px] font-bold border border-blue-200/50 dark:border-blue-900/40">
+                          90+ Fiil
+                        </span>
+                      </div>
+                      <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 truncate">
+                        V1, V2 ve V3 halleriyle düzensiz fiil çalışma kartları
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-1.5 shrink-0 px-3.5 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 group-hover:bg-blue-600 group-hover:text-white text-xs font-semibold transition-all">
+                    <span>Çalış</span>
+                    <ChevronRight size={14} />
                   </div>
                 </div>
               </div>
@@ -1027,6 +1126,12 @@ const App: React.FC = () => {
                 group={activeGroup}
                 onExit={() => setView(ViewState.DECKS)}
                 onStartQuiz={() => handleStartQuiz(activeGroup)}
+              />
+            )}
+
+            {view === ViewState.IRREGULAR_VERBS && (
+              <IrregularVerbsPractice
+                onExit={() => setView(ViewState.DASHBOARD)}
               />
             )}
 
@@ -1094,7 +1199,7 @@ const App: React.FC = () => {
                       className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-blue-600 text-white text-xs font-bold shadow-md shadow-blue-500/25"
                     >
                       <BookOpen size={14} />
-                      Destelere Göz At
+                      Kelime Gruplarına Göz At
                     </button>
                   </div>
                 ) : (
@@ -1392,7 +1497,7 @@ const App: React.FC = () => {
                             Supabase Bulut Eşitlemesi
                           </span>
                           <span className="text-xs text-slate-500 dark:text-slate-400">
-                            Hesap, deste ve çalışma verileriniz güvende
+                            Hesap, kelime grubu ve çalışma verileriniz güvende
                           </span>
                         </div>
                       </div>
@@ -1518,20 +1623,7 @@ const App: React.FC = () => {
       {session && (
         <nav className="md:hidden fixed bottom-0 inset-x-0 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border-t border-slate-200/80 dark:border-slate-800/80 z-40 safe-area-inset-bottom">
           <div className="grid grid-cols-5 h-16 max-w-md mx-auto items-center px-1">
-            {/* Tab 1: Desteler */}
-            <button
-              onClick={() => setView(ViewState.DECKS)}
-              className={`flex flex-col items-center justify-center gap-1 transition-colors ${
-                view === ViewState.DECKS
-                  ? 'text-blue-600 dark:text-blue-400 font-bold'
-                  : 'text-slate-500 dark:text-slate-400 font-medium'
-              }`}
-            >
-              <BookOpen size={19} className={view === ViewState.DECKS ? 'stroke-[2.5]' : 'stroke-2'} />
-              <span className="text-[10px] tracking-tight">Desteler</span>
-            </button>
-
-            {/* Tab 2: Dashboard */}
+            {/* Tab 1: Dashboard */}
             <button
               onClick={() => setView(ViewState.DASHBOARD)}
               className={`flex flex-col items-center justify-center gap-1 transition-colors ${
@@ -1544,13 +1636,26 @@ const App: React.FC = () => {
               <span className="text-[10px] tracking-tight">Dashboard</span>
             </button>
 
-            {/* Tab 3 [CENTER]: + Deste Ekle (Elevated Floating Action) */}
+            {/* Tab 2: Kelime Grupları */}
+            <button
+              onClick={() => setView(ViewState.DECKS)}
+              className={`flex flex-col items-center justify-center gap-1 transition-colors ${
+                view === ViewState.DECKS
+                  ? 'text-blue-600 dark:text-blue-400 font-bold'
+                  : 'text-slate-500 dark:text-slate-400 font-medium'
+              }`}
+            >
+              <BookOpen size={19} className={view === ViewState.DECKS ? 'stroke-[2.5]' : 'stroke-2'} />
+              <span className="text-[10px] tracking-tight">Kelime Grupları</span>
+            </button>
+
+            {/* Tab 3 [CENTER]: + Kelime Grubu Ekle (Elevated Floating Action) */}
             <div className="flex items-center justify-center relative">
               <button
                 onClick={handleBottomBarAddDeck}
                 className="relative -top-3.5 w-12 h-12 rounded-full bg-blue-600 hover:bg-blue-700 text-white shadow-md border-[3px] border-white dark:border-slate-900 flex items-center justify-center active:scale-90 transition-all z-10"
-                title="Yeni Deste Ekle"
-                aria-label="Yeni Deste Ekle"
+                title="Yeni Kelime Grubu Ekle"
+                aria-label="Yeni Kelime Grubu Ekle"
               >
                 <Plus size={23} className="stroke-[2.5]" />
               </button>

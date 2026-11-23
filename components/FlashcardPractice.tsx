@@ -155,7 +155,7 @@ const FlashcardPractice: React.FC<FlashcardPracticeProps> = ({ group, onExit, on
               Flashcard Pratiği
             </h2>
             <p className="text-xs text-slate-500 dark:text-slate-400">
-              Deste: <span className="font-semibold text-slate-800 dark:text-slate-200">{group.name}</span> ({group.words.length} kelime)
+              Kelime Grubu: <span className="font-semibold text-slate-800 dark:text-slate-200">{group.name}</span> ({group.words.length} kelime)
             </p>
             <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">
               Kartın üstüne tıklayarak anlamını görün, geçmişini takip edin.
@@ -271,7 +271,7 @@ const FlashcardPractice: React.FC<FlashcardPracticeProps> = ({ group, onExit, on
               onClick={onExit}
               className="w-full text-slate-500 dark:text-slate-400 font-medium py-2.5 rounded-2xl text-xs hover:text-slate-700 dark:hover:text-slate-200 transition-colors"
             >
-              Destelere Dön
+              Kelime Gruplarına Dön
             </button>
           </div>
         </div>

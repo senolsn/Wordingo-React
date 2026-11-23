@@ -192,7 +192,7 @@ const Quiz: React.FC<QuizProps> = ({
             onClick={onExit}
             className="flex items-center justify-center w-11 h-11 rounded-2xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
             title="Geri Dön"
-            aria-label="Destelere geri dön"
+            aria-label="Kelime gruplarına geri dön"
           >
             <ArrowLeft size={18} />
           </button>
@@ -214,7 +214,7 @@ const Quiz: React.FC<QuizProps> = ({
               Nasıl Pratik Yapmak İstersiniz?
             </h2>
             <p className="text-xs text-slate-500 dark:text-slate-400">
-              Deste: <span className="font-semibold text-slate-800 dark:text-slate-200">{group.name}</span> ({group.words.length} kelime)
+              Kelime Grubu: <span className="font-semibold text-slate-800 dark:text-slate-200">{group.name}</span> ({group.words.length} kelime)
             </p>
           </div>
 
@@ -360,7 +360,7 @@ const Quiz: React.FC<QuizProps> = ({
               onClick={onExit}
               className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-800 dark:text-slate-200 font-semibold py-3.5 rounded-2xl transition-all active:scale-98 text-xs shadow-sm"
             >
-              Destelere Dön
+              Kelime Gruplarına Dön
             </button>
           </div>
         </div>

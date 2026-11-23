@@ -119,7 +119,7 @@ const WordGroupEditor: React.FC<WordGroupEditorProps> = ({
               onClick={onBack}
               className="flex items-center justify-center w-11 h-11 min-w-[44px] min-h-[44px] rounded-2xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors shrink-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
               title="Geri Dön"
-              aria-label="Desteler listesine geri dön"
+              aria-label="Kelime grupları listesine geri dön"
             >
               <ArrowLeft size={18} />
             </button>
@@ -130,8 +130,8 @@ const WordGroupEditor: React.FC<WordGroupEditorProps> = ({
                   onChange={(e) => setGroupName(e.target.value)}
                   onBlur={handleSaveName}
                   className="text-base sm:text-lg font-bold bg-transparent text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none border-b border-transparent focus:border-blue-500 transition-colors truncate max-w-[280px] sm:max-w-md"
-                  placeholder="Deste adı..."
-                  aria-label="Deste adı"
+                  placeholder="Grup adı..."
+                  aria-label="Grup adı"
                 />
                 {nameSavedFeedback && (
                   <span className="text-[11px] text-emerald-600 dark:text-emerald-400 font-semibold inline-flex items-center gap-1 animate-fade-in shrink-0">
@@ -165,11 +165,11 @@ const WordGroupEditor: React.FC<WordGroupEditorProps> = ({
               <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
               <input
                 type="text"
-                placeholder="Bu destede kelime ara..."
+                placeholder="Bu grupta kelime ara..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/60 rounded-xl pl-9 pr-9 py-2 text-slate-900 dark:text-white placeholder-slate-400 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500/30 transition-all min-h-[40px]"
-                aria-label="Bu destede kelime ara"
+                aria-label="Bu grupta kelime ara"
               />
               {searchQuery && (
                 <button
@@ -199,7 +199,7 @@ const WordGroupEditor: React.FC<WordGroupEditorProps> = ({
               <Plus size={28} />
             </div>
             <h3 className="text-base font-bold text-slate-900 dark:text-white mb-1">
-              Bu destede henüz kelime yok
+              Bu grupta henüz kelime yok
             </h3>
             <p className="text-xs text-slate-500 dark:text-slate-400 mb-5 max-w-xs">
               Aşağıdaki formu kullanarak İngilizce kelimeleri ve Türkçe anlamlarını ekleyin.

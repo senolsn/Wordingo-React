@@ -21,9 +21,18 @@ export enum ViewState {
   EDITOR = 'EDITOR',
   QUIZ = 'QUIZ',
   FLASHCARD = 'FLASHCARD',
+  IRREGULAR_VERBS = 'IRREGULAR_VERBS',
   MISTAKES = 'MISTAKES',
   SETTINGS = 'SETTINGS',
   PROFILE = 'SETTINGS',
+}
+
+export interface IrregularVerb {
+  id: string;
+  v1: string; // Base Form (Infinitive)
+  v2: string; // Past Simple
+  v3: string; // Past Participle
+  tr: string; // Türkçe Anlamı
 }
 
 // Quiz yönü: Türkçe'den İngilizce'ye veya İngilizce'den Türkçe'ye
