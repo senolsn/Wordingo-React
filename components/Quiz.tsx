@@ -159,7 +159,7 @@ const Quiz: React.FC<QuizProps> = ({
 
   const retryWrongWords = () => {
     if (wrongAnswers.length === 0) return;
-    const uniqueWrongWords = Array.from(new Map(wrongAnswers.map((wa) => [wa.word.id, wa.word])).values());
+    const uniqueWrongWords: Word[] = Array.from(new Map<string, Word>(wrongAnswers.map((wa) => [wa.word.id, wa.word])).values());
     const direction = quizDirection || 'en-to-tr';
     setQuestions([]);
     setCurrentIndex(0);
@@ -488,7 +488,7 @@ const Quiz: React.FC<QuizProps> = ({
         <div key={`options-container-${currentQuestion.targetWord.id}-${currentIndex}`} className="space-y-3">
           {currentQuestion.options.map((option, idx) => {
             let stateStyles =
-              'bg-white dark:bg-slate-900 border-slate-200/80 dark:border-slate-800 text-slate-800 dark:text-slate-100 quiz-option-hover';
+              'bg-white dark:bg-slate-900 border-slate-200/80 dark:border-slate-800 text-slate-800 dark:text-slate-100';
             let iconComponent = null;
 
             if (selectedOption) {
@@ -503,11 +503,17 @@ const Quiz: React.FC<QuizProps> = ({
               } else {
                 stateStyles = 'bg-slate-100/60 dark:bg-slate-900/40 border-slate-200/40 dark:border-slate-800/40 text-slate-400 opacity-60';
               }
+            } else {
+              stateStyles += ' quiz-option-hover';
             }
 
             return (
               <button
+                type="button"
                 key={`opt-${currentQuestion.targetWord.id}-${idx}`}
+                onPointerDown={(e) => {
+                  e.currentTarget.blur();
+                }}
                 onClick={(e) => {
                   e.currentTarget.blur();
                   handleOptionClick(option);
@@ -516,7 +522,7 @@ const Quiz: React.FC<QuizProps> = ({
                   e.currentTarget.blur();
                 }}
                 disabled={selectedOption !== null}
-                className={`quiz-option-btn relative w-full p-4 rounded-2xl border-2 text-sm sm:text-base font-semibold transition-colors duration-150 min-h-[56px] flex items-center justify-center text-center shadow-sm active:scale-98 focus:outline-none focus:ring-0 sm:focus-visible:ring-2 sm:focus-visible:ring-blue-500 sm:focus-visible:ring-offset-2 dark:sm:focus-visible:ring-offset-slate-900 ${stateStyles}`}
+                className={`quiz-option-btn relative w-full p-4 rounded-2xl border-2 text-sm sm:text-base font-semibold transition-colors duration-150 min-h-[56px] flex items-center justify-center text-center shadow-sm active:scale-98 focus:outline-none focus:ring-0 md:focus-visible:ring-2 md:focus-visible:ring-blue-500 md:focus-visible:ring-offset-2 dark:md:focus-visible:ring-offset-slate-900 ${stateStyles}`}
               >
                 <span className="hidden sm:inline-flex items-center justify-center w-6 h-6 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-500 text-xs font-mono font-bold absolute left-3.5">
                   {idx + 1}

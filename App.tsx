@@ -5,6 +5,11 @@ import WordGroupEditor from './components/WordGroupEditor';
 import Quiz from './components/Quiz';
 import FlashcardPractice from './components/FlashcardPractice';
 import IrregularVerbsPractice from './components/IrregularVerbsPractice';
+import PhrasalVerbsPractice from './components/PhrasalVerbsPractice';
+import { CuratedVocabularyPractice } from './components/CuratedVocabularyPractice';
+import { OXFORD_WORDS } from './data/oxfordWords';
+import { YDS_WORDS } from './data/ydsWords';
+import { BUSINESS_WORDS } from './data/businessWords';
 import { Auth } from './components/Auth';
 import { supabase } from './lib/supabaseClient';
 import { TTSAccent, getStoredAccent, setStoredAccent } from './services/ttsService';
@@ -35,7 +40,9 @@ import {
   Target,
   ShieldCheck,
   Smartphone,
-  Download
+  Download,
+  Briefcase,
+  GraduationCap
 } from 'lucide-react';
 import { LanguageBadge } from './components/LanguageBadge';
 import { ConfirmDialog } from './components/ConfirmDialog';
@@ -487,8 +494,8 @@ const App: React.FC = () => {
   };
 
   const handleStartMistakesQuiz = () => {
-    const allMistakeWords = groups.flatMap((g) => (g.words || []).filter((w) => (w.wrong_count || 0) > 0));
-    const uniqueMistakes = Array.from(new Map(allMistakeWords.map((w) => [w.id, w])).values());
+    const allMistakeWords: Word[] = groups.flatMap((g) => (g.words || []).filter((w) => (w.wrong_count || 0) > 0));
+    const uniqueMistakes: Word[] = Array.from(new Map<string, Word>(allMistakeWords.map((w) => [w.id, w])).values());
     if (uniqueMistakes.length < 1) {
       setModalConfig({
         isOpen: true,
@@ -700,8 +707,8 @@ const App: React.FC = () => {
 
   const totalWords = groups.reduce((acc, g) => acc + (g.words?.length || 0), 0);
   const totalMastery = groups.reduce((acc, g) => acc + (g.perfect_completion_count || 0), 0);
-  const allMistakeWords = groups.flatMap((g) => (g.words || []).filter((w) => (w.wrong_count || 0) > 0));
-  const uniqueMistakes = Array.from(new Map(allMistakeWords.map((w) => [w.id, w])).values());
+  const allMistakeWords: Word[] = groups.flatMap((g) => (g.words || []).filter((w) => (w.wrong_count || 0) > 0));
+  const uniqueMistakes: Word[] = Array.from(new Map<string, Word>(allMistakeWords.map((w) => [w.id, w])).values());
   const totalMistakes = uniqueMistakes.length;
   const streakDays = userProfile?.streak_days ?? 1;
   const studyMinutes = userProfile?.study_time_minutes ?? 0;
@@ -711,7 +718,13 @@ const App: React.FC = () => {
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white font-sans antialiased">
       {/* Top Header - Visible on all non-quiz pages */}
-      {view !== ViewState.QUIZ && view !== ViewState.FLASHCARD && view !== ViewState.IRREGULAR_VERBS && (
+      {view !== ViewState.QUIZ &&
+        view !== ViewState.FLASHCARD &&
+        view !== ViewState.IRREGULAR_VERBS &&
+        view !== ViewState.PHRASAL_VERBS &&
+        view !== ViewState.OXFORD_3000 &&
+        view !== ViewState.YDS_WORDS &&
+        view !== ViewState.BUSINESS_ENGLISH && (
         <header className="bg-white/85 dark:bg-slate-900/85 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800/80 sticky top-0 z-30 safe-area-inset-top transition-colors">
           <div className="max-w-7xl mx-auto px-4 sm:px-6">
             <div className="h-16 flex items-center justify-between gap-3 sm:gap-4">
@@ -1060,42 +1073,217 @@ const App: React.FC = () => {
                   )}
                 </div>
 
-                {/* Irregular Verbs Hub Card */}
-                <div
-                  onClick={() => setView(ViewState.IRREGULAR_VERBS)}
-                  className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-4 sm:p-5 flex items-center justify-between gap-4 hover:border-blue-400 dark:hover:border-blue-500 hover:shadow-md cursor-pointer transition-all active:scale-98 group"
-                  role="button"
-                  tabIndex={0}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' || e.key === ' ') {
-                      e.preventDefault();
-                      setView(ViewState.IRREGULAR_VERBS);
-                    }
-                  }}
-                  aria-label="Irregular Verbs (Düzensiz Fiiller) çalışmasına git"
-                >
-                  <div className="flex items-center gap-3.5 min-w-0">
-                    <div className="w-11 h-11 rounded-2xl bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0 border border-blue-200/60 dark:border-blue-800/60 group-hover:scale-105 transition-transform">
-                      <Sparkles size={20} />
-                    </div>
-                    <div className="min-w-0">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <h2 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white tracking-tight group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
-                          Irregular Verbs
-                        </h2>
-                        <span className="px-2 py-0.5 rounded-full bg-blue-50 dark:bg-blue-950/50 text-blue-600 dark:text-blue-400 text-[10px] font-bold border border-blue-200/50 dark:border-blue-900/40">
-                          90+ Fiil
-                        </span>
-                      </div>
-                      <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 truncate">
-                        V1, V2 ve V3 halleriyle düzensiz fiil çalışma kartları
+                {/* Special Practice Hubs */}
+                <div className="space-y-3 pt-2">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="text-sm font-bold text-slate-900 dark:text-white tracking-tight">
+                        Özel Çalışma Alanları
+                      </h3>
+                      <p className="text-xs text-slate-500 dark:text-slate-400">
+                        Statik, hızlı ve çevrim dışı kelime setleri
                       </p>
                     </div>
+                    <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-full">
+                      5 Modül
+                    </span>
                   </div>
 
-                  <div className="flex items-center gap-1.5 shrink-0 px-3.5 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 group-hover:bg-blue-600 group-hover:text-white text-xs font-semibold transition-all">
-                    <span>Çalış</span>
-                    <ChevronRight size={14} />
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                    {/* Irregular Verbs Hub Card */}
+                    <div
+                      onClick={() => setView(ViewState.IRREGULAR_VERBS)}
+                      className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-4 flex items-center justify-between gap-3 hover:border-blue-400 dark:hover:border-blue-500 hover:shadow-md cursor-pointer transition-all active:scale-98 group"
+                      role="button"
+                      tabIndex={0}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault();
+                          setView(ViewState.IRREGULAR_VERBS);
+                        }
+                      }}
+                      aria-label="Irregular Verbs (Düzensiz Fiiller) çalışmasına git"
+                    >
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div className="w-10 h-10 rounded-xl bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0 border border-blue-200/60 dark:border-blue-800/60 group-hover:scale-105 transition-transform">
+                          <Sparkles size={18} />
+                        </div>
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <h4 className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white tracking-tight group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                              Irregular Verbs
+                            </h4>
+                            <span className="px-1.5 py-0.2 rounded-full bg-blue-50 dark:bg-blue-950/50 text-blue-600 dark:text-blue-400 text-[10px] font-bold border border-blue-200/50 dark:border-blue-900/40">
+                              90+
+                            </span>
+                          </div>
+                          <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 truncate">
+                            V1, V2 ve V3 halleri
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-1 shrink-0 px-2.5 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 group-hover:bg-blue-600 group-hover:text-white text-[11px] font-semibold transition-all">
+                        <span>Çalış</span>
+                        <ChevronRight size={13} />
+                      </div>
+                    </div>
+
+                    {/* Phrasal Verbs Hub Card */}
+                    <div
+                      onClick={() => setView(ViewState.PHRASAL_VERBS)}
+                      className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-4 flex items-center justify-between gap-3 hover:border-emerald-400 dark:hover:border-emerald-500 hover:shadow-md cursor-pointer transition-all active:scale-98 group"
+                      role="button"
+                      tabIndex={0}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault();
+                          setView(ViewState.PHRASAL_VERBS);
+                        }
+                      }}
+                      aria-label="Phrasal Verbs (Deyimsel Fiiller) çalışmasına git"
+                    >
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div className="w-10 h-10 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0 border border-emerald-200/60 dark:border-emerald-800/60 group-hover:scale-105 transition-transform">
+                          <BookOpen size={18} />
+                        </div>
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <h4 className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white tracking-tight group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
+                              Phrasal Verbs
+                            </h4>
+                            <span className="px-1.5 py-0.2 rounded-full bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 text-[10px] font-bold border border-emerald-200/50 dark:border-emerald-900/40">
+                              70+
+                            </span>
+                          </div>
+                          <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 truncate">
+                            Örnek cümleli kalıplar
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-1 shrink-0 px-2.5 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 group-hover:bg-emerald-600 group-hover:text-white text-[11px] font-semibold transition-all">
+                        <span>Çalış</span>
+                        <ChevronRight size={13} />
+                      </div>
+                    </div>
+
+                    {/* Oxford 3000 Hub Card */}
+                    <div
+                      onClick={() => setView(ViewState.OXFORD_3000)}
+                      className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-4 flex items-center justify-between gap-3 hover:border-amber-400 dark:hover:border-amber-500 hover:shadow-md cursor-pointer transition-all active:scale-98 group"
+                      role="button"
+                      tabIndex={0}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault();
+                          setView(ViewState.OXFORD_3000);
+                        }
+                      }}
+                      aria-label="Oxford 3000 temel kelimeler çalışmasına git"
+                    >
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div className="w-10 h-10 rounded-xl bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0 border border-amber-200/60 dark:border-amber-800/60 group-hover:scale-105 transition-transform">
+                          <Target size={18} />
+                        </div>
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <h4 className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white tracking-tight group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">
+                              Oxford 3000
+                            </h4>
+                            <span className="px-1.5 py-0.2 rounded-full bg-amber-50 dark:bg-amber-950/50 text-amber-700 dark:text-amber-400 text-[10px] font-bold border border-amber-200/50 dark:border-amber-900/40">
+                              Çekirdek
+                            </span>
+                          </div>
+                          <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 truncate">
+                            A1-B2 temel kelimeler
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-1 shrink-0 px-2.5 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 group-hover:bg-amber-600 group-hover:text-white text-[11px] font-semibold transition-all">
+                        <span>Çalış</span>
+                        <ChevronRight size={13} />
+                      </div>
+                    </div>
+
+                    {/* YDS Sık Çıkanlar Hub Card */}
+                    <div
+                      onClick={() => setView(ViewState.YDS_WORDS)}
+                      className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-4 flex items-center justify-between gap-3 hover:border-sky-400 dark:hover:border-sky-500 hover:shadow-md cursor-pointer transition-all active:scale-98 group"
+                      role="button"
+                      tabIndex={0}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault();
+                          setView(ViewState.YDS_WORDS);
+                        }
+                      }}
+                      aria-label="YDS Sık Çıkanlar akademik kelimeler çalışmasına git"
+                    >
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div className="w-10 h-10 rounded-xl bg-sky-50 dark:bg-sky-950/60 text-sky-600 dark:text-sky-400 flex items-center justify-center shrink-0 border border-sky-200/60 dark:border-sky-800/60 group-hover:scale-105 transition-transform">
+                          <GraduationCap size={18} />
+                        </div>
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <h4 className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white tracking-tight group-hover:text-sky-600 dark:group-hover:text-sky-400 transition-colors">
+                              YDS Sık Çıkanlar
+                            </h4>
+                            <span className="px-1.5 py-0.2 rounded-full bg-sky-50 dark:bg-sky-950/50 text-sky-600 dark:text-sky-400 text-[10px] font-bold border border-sky-200/50 dark:border-sky-900/40">
+                              Akademik
+                            </span>
+                          </div>
+                          <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 truncate">
+                            Sınav kelimeleri & eş anlamlar
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-1 shrink-0 px-2.5 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 group-hover:bg-sky-600 group-hover:text-white text-[11px] font-semibold transition-all">
+                        <span>Çalış</span>
+                        <ChevronRight size={13} />
+                      </div>
+                    </div>
+
+                    {/* İş İngilizcesi Hub Card */}
+                    <div
+                      onClick={() => setView(ViewState.BUSINESS_ENGLISH)}
+                      className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-4 flex items-center justify-between gap-3 hover:border-slate-400 dark:hover:border-slate-500 hover:shadow-md cursor-pointer transition-all active:scale-98 group"
+                      role="button"
+                      tabIndex={0}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault();
+                          setView(ViewState.BUSINESS_ENGLISH);
+                        }
+                      }}
+                      aria-label="İş İngilizcesi kurumsal terimler çalışmasına git"
+                    >
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 flex items-center justify-center shrink-0 border border-slate-200 dark:border-slate-700 group-hover:scale-105 transition-transform">
+                          <Briefcase size={18} />
+                        </div>
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <h4 className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white tracking-tight group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                              İş İngilizcesi
+                            </h4>
+                            <span className="px-1.5 py-0.2 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-[10px] font-bold border border-slate-300 dark:border-slate-700">
+                              Business
+                            </span>
+                          </div>
+                          <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 truncate">
+                            Toplantı, yönetim & finans
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-1 shrink-0 px-2.5 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 group-hover:bg-slate-800 group-hover:text-white dark:group-hover:bg-slate-200 dark:group-hover:text-slate-900 text-[11px] font-semibold transition-all">
+                        <span>Çalış</span>
+                        <ChevronRight size={13} />
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -1131,6 +1319,45 @@ const App: React.FC = () => {
 
             {view === ViewState.IRREGULAR_VERBS && (
               <IrregularVerbsPractice
+                onExit={() => setView(ViewState.DASHBOARD)}
+              />
+            )}
+
+            {view === ViewState.PHRASAL_VERBS && (
+              <PhrasalVerbsPractice
+                onExit={() => setView(ViewState.DASHBOARD)}
+              />
+            )}
+
+            {view === ViewState.OXFORD_3000 && (
+              <CuratedVocabularyPractice
+                title="Oxford 3000"
+                subtitle="En Çok Kullanılan Temel Kelimeler"
+                badgeText="A1 - B2"
+                storageKey="wordingo-learned-oxford3000"
+                words={OXFORD_WORDS}
+                onExit={() => setView(ViewState.DASHBOARD)}
+              />
+            )}
+
+            {view === ViewState.YDS_WORDS && (
+              <CuratedVocabularyPractice
+                title="YDS Sık Çıkanlar"
+                subtitle="Akademik ve Sınav Kelimeleri"
+                badgeText="YDS & YÖKDİL"
+                storageKey="wordingo-learned-yds"
+                words={YDS_WORDS}
+                onExit={() => setView(ViewState.DASHBOARD)}
+              />
+            )}
+
+            {view === ViewState.BUSINESS_ENGLISH && (
+              <CuratedVocabularyPractice
+                title="İş İngilizcesi"
+                subtitle="Kurumsal ve Toplantı Terimleri"
+                badgeText="Business"
+                storageKey="wordingo-learned-business"
+                words={BUSINESS_WORDS}
                 onExit={() => setView(ViewState.DASHBOARD)}
               />
             )}
@@ -1726,10 +1953,14 @@ const App: React.FC = () => {
         deferredPrompt={deferredPrompt}
         onInstallSuccess={() => {
           setIsStandalone(true);
-          setNotification({
-            type: 'success',
+          setModalConfig({
+            isOpen: true,
             title: 'Harika! 🎉',
-            message: 'Wordingo başarıyla ana ekranınıza eklendi.'
+            description: 'Wordingo başarıyla ana ekranınıza eklendi.',
+            confirmLabel: 'Tamam',
+            showCancel: false,
+            isDestructive: false,
+            onConfirm: closeModal
           });
         }}
       />

@@ -22,6 +22,10 @@ export enum ViewState {
   QUIZ = 'QUIZ',
   FLASHCARD = 'FLASHCARD',
   IRREGULAR_VERBS = 'IRREGULAR_VERBS',
+  PHRASAL_VERBS = 'PHRASAL_VERBS',
+  OXFORD_3000 = 'OXFORD_3000',
+  YDS_WORDS = 'YDS_WORDS',
+  BUSINESS_ENGLISH = 'BUSINESS_ENGLISH',
   MISTAKES = 'MISTAKES',
   SETTINGS = 'SETTINGS',
   PROFILE = 'SETTINGS',
@@ -33,6 +37,26 @@ export interface IrregularVerb {
   v2: string; // Past Simple
   v3: string; // Past Participle
   tr: string; // Türkçe Anlamı
+}
+
+export interface PhrasalVerb {
+  id: string;
+  verb: string; // e.g. "give up"
+  tr: string; // Türkçe Anlamı: "vazgeçmek, bırakmak"
+  meaningEn?: string; // İngilizce Kısa Tanımı: "stop trying"
+  example: string; // Örnek Cümle
+  exampleTr?: string; // Örnek Cümlenin Çevirisi
+}
+
+export interface CuratedWord {
+  id: string;
+  word: string;
+  tr: string;
+  type?: string; // noun, verb, adj, adv
+  level?: string; // A1, A2, B1, B2, C1
+  synonym?: string; // Eş anlamlısı (synonym)
+  example: string;
+  exampleTr?: string;
 }
 
 // Quiz yönü: Türkçe'den İngilizce'ye veya İngilizce'den Türkçe'ye

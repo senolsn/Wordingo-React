@@ -578,13 +578,28 @@ html.dark .mobile-input::placeholder {
 
 .quiz-option-btn {
   -webkit-tap-highlight-color: transparent !important;
+  -webkit-touch-callout: none !important;
   touch-action: manipulation;
   user-select: none;
   -webkit-user-select: none;
+  outline: none !important;
+  outline-color: transparent !important;
+  outline-width: 0 !important;
+  box-shadow: none !important;
 }
 
-/* On real mouse devices: show blue border on hover */
-@media (hover: hover) and (pointer: fine) {
+.quiz-option-btn:focus,
+.quiz-option-btn:focus-visible,
+.quiz-option-btn:active {
+  outline: none !important;
+  outline-color: transparent !important;
+  outline-width: 0 !important;
+  box-shadow: none !important;
+  -webkit-tap-highlight-color: transparent !important;
+}
+
+/* ONLY on true desktop screens with a mouse (min-width: 769px): show blue border on hover */
+@media (min-width: 769px) and (hover: hover) and (pointer: fine) {
   .quiz-option-hover:hover:not(:disabled) {
     border-color: #60a5fa !important; /* blue-400 */
   }
@@ -593,22 +608,29 @@ html.dark .mobile-input::placeholder {
   }
 }
 
-/* On mobile touch devices / PWA: NEVER stick hover or focus rings */
-@media (hover: none), (pointer: coarse) {
+/* On all mobile / touch screens: NEVER show blue hover or focus border */
+@media (max-width: 768px), (hover: none), (pointer: coarse) {
   .quiz-option-btn,
   .quiz-option-btn:hover,
+  .quiz-option-btn:active,
   .quiz-option-btn:focus,
   .quiz-option-btn:focus-visible {
     outline: none !important;
+    outline-width: 0 !important;
+    outline-color: transparent !important;
     box-shadow: none !important;
     -webkit-tap-highlight-color: transparent !important;
   }
   
-  /* Reset hover border on touch devices to neutral slate */
-  .quiz-option-hover:hover:not(:disabled) {
+  /* Strictly reset hover/active border on all mobile / touch screens to neutral slate */
+  .quiz-option-hover:hover:not(:disabled),
+  .quiz-option-hover:active:not(:disabled),
+  .quiz-option-hover:focus:not(:disabled) {
     border-color: rgba(226, 232, 240, 0.8) !important;
   }
-  html.dark .quiz-option-hover:hover:not(:disabled) {
+  html.dark .quiz-option-hover:hover:not(:disabled),
+  html.dark .quiz-option-hover:active:not(:disabled),
+  html.dark .quiz-option-hover:focus:not(:disabled) {
     border-color: rgba(30, 41, 59, 0.8) !important;
   }
 }
