@@ -225,7 +225,7 @@ const WordGroupManager: React.FC<WordGroupManagerProps> = ({
   }, [groups, searchQuery, selectedFilter]);
 
   return (
-    <div className="min-h-screen pb-24 md:pb-16 safe-area-inset-bottom">
+    <div className="min-h-screen pb-mobile-nav">
       {/* Top Search & Filter Bar */}
       <div className="max-w-4xl mx-auto px-4 sm:px-6 pt-5 pb-2">
         {/* Search Input */}

@@ -23,8 +23,19 @@ interface IrregularVerbsPracticeProps {
   onExit: () => void;
 }
 
+// Helper to shuffle array (Fisher-Yates)
+const shuffleArray = <T,>(arr: T[]): T[] => {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+};
+
 export const IrregularVerbsPractice: React.FC<IrregularVerbsPracticeProps> = ({ onExit }) => {
   const [activeTab, setActiveTab] = useState<'cards' | 'list'>('cards');
+  const [shuffleVersion, setShuffleVersion] = useState(0);
   const [verbs, setVerbs] = useState<IrregularVerb[]>(IRREGULAR_VERBS);
   const [currentIndex, setCurrentIndex] = useState(0);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -120,18 +131,15 @@ export const IrregularVerbsPractice: React.FC<IrregularVerbsPracticeProps> = ({ 
     }
   };
 
-  // Shuffle helper
+  // Shuffle helper: always randomize from full list and restart at 0
   const handleShuffle = () => {
-    const shuffled = [...verbs];
-    for (let i = shuffled.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-    }
+    const shuffled = shuffleArray(IRREGULAR_VERBS);
     setVerbs(shuffled);
     setCurrentIndex(0);
     setFlippedMap({});
+    setShuffleVersion((v) => v + 1);
     if (containerRef.current) {
-      containerRef.current.scrollTo({ top: 0, behavior: 'instant' });
+      containerRef.current.scrollTop = 0;
     }
   };
 
@@ -139,8 +147,9 @@ export const IrregularVerbsPractice: React.FC<IrregularVerbsPracticeProps> = ({ 
     setVerbs(IRREGULAR_VERBS);
     setCurrentIndex(0);
     setFlippedMap({});
+    setShuffleVersion((v) => v + 1);
     if (containerRef.current) {
-      containerRef.current.scrollTo({ top: 0, behavior: 'instant' });
+      containerRef.current.scrollTop = 0;
     }
   };
 
@@ -167,18 +176,18 @@ export const IrregularVerbsPractice: React.FC<IrregularVerbsPracticeProps> = ({ 
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [activeTab, handleNext, handlePrev, autoReveal, currentIndex, verbs, onExit]);
 
-  // Filtered verbs for list view
+  // Filtered verbs for list view (reflects shuffled order when shuffled)
   const filteredVerbs = useMemo(() => {
-    if (!searchQuery.trim()) return IRREGULAR_VERBS;
+    if (!searchQuery.trim()) return verbs;
     const q = searchQuery.toLowerCase().trim();
-    return IRREGULAR_VERBS.filter(
+    return verbs.filter(
       (v) =>
         v.v1.toLowerCase().includes(q) ||
         v.v2.toLowerCase().includes(q) ||
         v.v3.toLowerCase().includes(q) ||
         v.tr.toLowerCase().includes(q)
     );
-  }, [searchQuery]);
+  }, [searchQuery, verbs]);
 
   const progressPercent = verbs.length > 0 ? ((currentIndex + 1) / verbs.length) * 100 : 0;
 
@@ -216,36 +225,32 @@ export const IrregularVerbsPractice: React.FC<IrregularVerbsPracticeProps> = ({ 
           <div className="flex items-center gap-1.5 shrink-0">
             {activeTab === 'cards' && (
               <>
-                {/* Auto Reveal (Anlamlar Açık - Seri Mod) Toggle */}
+                {/* Auto Reveal (Gizli / Açık) Toggle - Icon Only */}
                 <button
                   onClick={toggleAutoReveal}
-                  className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-semibold transition-all border ${
+                  className={`w-9 h-9 flex items-center justify-center rounded-xl transition-all border shrink-0 ${
                     autoReveal
-                      ? 'bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border-amber-300/80 dark:border-amber-800/80 shadow-xs'
-                      : 'bg-white dark:bg-slate-800 text-slate-500 dark:text-slate-400 border-slate-200 dark:border-slate-700 hover:text-slate-800 dark:hover:text-slate-200'
+                      ? 'bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 border-amber-300/80 dark:border-amber-800/80 shadow-xs'
+                      : 'bg-white dark:bg-slate-800 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 border-slate-200 dark:border-slate-700'
                   }`}
-                  title={autoReveal ? 'Anlamlar açık (Seri kaydırma modu aktif)' : 'Anlamları gizle (Klasik kart modu)'}
+                  title={autoReveal ? 'Anlamlar Açık (Gizlemek için dokunun)' : 'Anlamlar Gizli (Açmak için dokunun)'}
+                  aria-label={autoReveal ? 'Anlamları Gizle' : 'Anlamları Göster'}
                 >
                   {autoReveal ? (
-                    <Eye size={13} className="stroke-[2.5] text-amber-600 dark:text-amber-400" />
+                    <Eye size={16} className="stroke-[2.5]" />
                   ) : (
-                    <EyeOff size={13} />
-                  )}
-                  <span className="hidden sm:inline">Anlamlar Açık</span>
-                  <span className="sm:hidden">{autoReveal ? 'Açık' : 'Gizli'}</span>
-                  {autoReveal && (
-                    <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
+                    <EyeOff size={16} />
                   )}
                 </button>
 
-                {/* Shuffle */}
+                {/* Shuffle - Icon Only */}
                 <button
                   onClick={handleShuffle}
-                  className="w-8 h-8 flex items-center justify-center rounded-xl text-slate-500 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-slate-800 transition-colors"
-                  title="Kartları Karıştır"
-                  aria-label="Kartları Karıştır"
+                  className="w-9 h-9 flex items-center justify-center rounded-xl bg-white dark:bg-slate-800 text-slate-500 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 transition-all active:scale-95 shadow-xs shrink-0"
+                  title="Kartları Yeniden Karıştır"
+                  aria-label="Kartları Yeniden Karıştır"
                 >
-                  <Shuffle size={15} />
+                  <Shuffle size={16} />
                 </button>
               </>
             )}
@@ -295,12 +300,14 @@ export const IrregularVerbsPractice: React.FC<IrregularVerbsPracticeProps> = ({ 
         <div className="relative flex-1 w-full h-full overflow-hidden flex flex-col items-center">
           {/* Vertical Snap Scroll Container */}
           <div
+            key={`snap-container-${shuffleVersion}`}
             ref={containerRef}
             onScroll={handleSnapScroll}
             className="w-full h-full overflow-y-auto snap-y snap-mandatory scroll-smooth hide-scrollbar"
             style={{
               scrollSnapType: 'y mandatory',
-              WebkitOverflowScrolling: 'touch'
+              WebkitOverflowScrolling: 'touch',
+              overflowAnchor: 'none'
             }}
           >
             {verbs.map((item, index) => {
@@ -309,7 +316,7 @@ export const IrregularVerbsPractice: React.FC<IrregularVerbsPracticeProps> = ({ 
 
               return (
                 <div
-                  key={item.id}
+                  key={`${shuffleVersion}-${item.id}`}
                   id={`irregular-card-${index}`}
                   className="w-full h-full snap-start snap-always flex flex-col items-center justify-center p-3 sm:p-5 shrink-0 select-none"
                 >

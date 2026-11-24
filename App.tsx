@@ -856,7 +856,7 @@ const App: React.FC = () => {
 
             {/* DASHBOARD VIEW (Minimalist Learning Hub) */}
             {view === ViewState.DASHBOARD && (
-              <div className="max-w-4xl mx-auto px-4 sm:px-6 py-6 pb-24 sm:pb-16 space-y-6 animate-fade-in">
+              <div className="max-w-4xl mx-auto px-4 sm:px-6 pt-6 pb-mobile-nav space-y-6 animate-fade-in">
                 {/* Minimal Header */}
                 <div className="flex items-center justify-between">
                   <div>
@@ -1312,7 +1312,7 @@ const App: React.FC = () => {
             {view === ViewState.FLASHCARD && activeGroup && (
               <FlashcardPractice
                 group={activeGroup}
-                onExit={() => setView(ViewState.DECKS)}
+                onExit={() => setView(ViewState.DASHBOARD)}
                 onStartQuiz={() => handleStartQuiz(activeGroup)}
               />
             )}
@@ -1364,7 +1364,7 @@ const App: React.FC = () => {
 
             {/* MISTAKES VIEW (Dedicated Mistakes Tab) */}
             {view === ViewState.MISTAKES && (
-              <div className="max-w-3xl mx-auto px-4 sm:px-6 py-6 pb-28 sm:pb-16 animate-fade-in">
+              <div className="max-w-3xl mx-auto px-4 sm:px-6 pt-6 pb-mobile-nav animate-fade-in">
                 {/* Header with Title and Actions */}
                 <div className="mb-6 space-y-3">
                   <div>
@@ -1478,7 +1478,7 @@ const App: React.FC = () => {
 
             {/* SETTINGS VIEW (Clean Grouped Native Buttons & Account Header) */}
             {(view === ViewState.SETTINGS || view === ViewState.PROFILE) && (
-              <div className="max-w-xl mx-auto px-4 sm:px-6 py-6 pb-28 sm:pb-16 space-y-4 animate-fade-in">
+              <div className="max-w-xl mx-auto px-4 sm:px-6 pt-6 pb-mobile-nav space-y-4 animate-fade-in">
                 <div className="px-1">
                   <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
                     Ayarlar
