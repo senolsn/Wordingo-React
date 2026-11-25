@@ -26,6 +26,10 @@ export enum ViewState {
   OXFORD_3000 = 'OXFORD_3000',
   YDS_WORDS = 'YDS_WORDS',
   BUSINESS_ENGLISH = 'BUSINESS_ENGLISH',
+  TRAVEL_WORDS = 'TRAVEL_WORDS',
+  DAILY_WORDS = 'DAILY_WORDS',
+  TECH_WORDS = 'TECH_WORDS',
+  DUEL = 'DUEL',
   MISTAKES = 'MISTAKES',
   SETTINGS = 'SETTINGS',
   PROFILE = 'SETTINGS',
@@ -86,3 +90,36 @@ export interface UserProfile {
   created_at?: string;
   updated_at?: string;
 }
+
+// 2 Kişilik Canlı Düello Tipleri
+export type DuelCategory =
+  | 'oxford'
+  | 'yds'
+  | 'business'
+  | 'phrasal'
+  | 'daily'
+  | 'travel'
+  | 'tech'
+  | 'custom';
+
+export interface DuelQuestion {
+  id: string;
+  word: string;
+  tr: string;
+  type?: string;
+  example?: string;
+  exampleTr?: string;
+  options: string[];
+  correctOption: string;
+}
+
+export interface DuelPlayer {
+  id: string;
+  name: string;
+  isHost: boolean;
+  score: number;
+  currentQuestionIndex: number;
+  isFinished: boolean;
+  finishedTimeMs?: number;
+}
+
