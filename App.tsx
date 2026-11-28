@@ -7,13 +7,19 @@ import FlashcardPractice from './components/FlashcardPractice';
 import IrregularVerbsPractice from './components/IrregularVerbsPractice';
 import PhrasalVerbsPractice from './components/PhrasalVerbsPractice';
 import { CuratedVocabularyPractice } from './components/CuratedVocabularyPractice';
+import { DuelPractice } from './components/DuelPractice';
+import GrammarPractice from './components/GrammarPractice';
 import { OXFORD_WORDS } from './data/oxfordWords';
 import { YDS_WORDS } from './data/ydsWords';
 import { BUSINESS_WORDS } from './data/businessWords';
+import { TRAVEL_WORDS } from './data/travelWords';
+import { DAILY_WORDS } from './data/dailyWords';
+import { TECH_WORDS } from './data/techWords';
 import { Auth } from './components/Auth';
 import { supabase } from './lib/supabaseClient';
 import { TTSAccent, getStoredAccent, setStoredAccent } from './services/ttsService';
 import {
+  PenLine,
   LogOut,
   Loader2,
   Languages,
@@ -42,7 +48,12 @@ import {
   Smartphone,
   Download,
   Briefcase,
-  GraduationCap
+  GraduationCap,
+  Swords,
+  Plane,
+  MessageCircle,
+  Cpu,
+  Compass
 } from 'lucide-react';
 import { LanguageBadge } from './components/LanguageBadge';
 import { ConfirmDialog } from './components/ConfirmDialog';
@@ -680,6 +691,77 @@ const App: React.FC = () => {
     }
   };
 
+  const handleAddDuelMistakesToPool = async (
+    missedWords: { en: string; tr: string; id?: string }[]
+  ): Promise<number> => {
+    if (!missedWords.length) return 0;
+    try {
+      const existingWordIds: string[] = [];
+      const newWordsToInsert: { en: string; tr: string }[] = [];
+
+      const allUserWordsMap = new Map<string, string>();
+      groups.forEach((g) => {
+        (g.words || []).forEach((w) => {
+          allUserWordsMap.set(w.en.toLowerCase().trim(), w.id);
+        });
+      });
+
+      missedWords.forEach((mw) => {
+        const cleanEn = mw.en.toLowerCase().trim();
+        if (
+          mw.id &&
+          !mw.id.startsWith('ox-') &&
+          !mw.id.startsWith('yds-') &&
+          !mw.id.startsWith('biz-') &&
+          !mw.id.startsWith('dq-')
+        ) {
+          existingWordIds.push(mw.id);
+        } else if (allUserWordsMap.has(cleanEn)) {
+          existingWordIds.push(allUserWordsMap.get(cleanEn)!);
+        } else {
+          newWordsToInsert.push({ en: mw.en, tr: mw.tr });
+        }
+      });
+
+      if (existingWordIds.length > 0) {
+        await supabase.rpc('increment_wrong_counts', { word_ids: existingWordIds });
+      }
+
+      if (newWordsToInsert.length > 0) {
+        let duelGroup = groups.find((g) => g.name === '🎯 Düello Hataları');
+        let groupId = duelGroup?.id;
+        if (!groupId) {
+          const { data: newGroup, error: grpErr } = await supabase
+            .from('word_groups')
+            .insert({
+              name: '🎯 Düello Hataları',
+              description: 'Canlı kelime düellolarında yanlış bilinen kelimeler',
+              level: 'Mix',
+              user_id: session?.user?.id
+            })
+            .select()
+            .single();
+          if (grpErr) throw grpErr;
+          groupId = newGroup.id;
+        }
+
+        const inserts = newWordsToInsert.map((w) => ({
+          group_id: groupId,
+          en: w.en,
+          tr: w.tr,
+          wrong_count: 1
+        }));
+        await supabase.from('words').insert(inserts);
+      }
+
+      await fetchGroups();
+      return missedWords.length;
+    } catch (e) {
+      console.error('Error adding duel mistakes to pool:', e);
+      throw e;
+    }
+  };
+
   const handlePerfectCompletion = async (groupId: string) => {
     try {
       const { error } = await supabase.rpc('increment_perfect_completion', { p_group_id: groupId });
@@ -724,7 +806,11 @@ const App: React.FC = () => {
         view !== ViewState.PHRASAL_VERBS &&
         view !== ViewState.OXFORD_3000 &&
         view !== ViewState.YDS_WORDS &&
-        view !== ViewState.BUSINESS_ENGLISH && (
+        view !== ViewState.BUSINESS_ENGLISH &&
+        view !== ViewState.TRAVEL_WORDS &&
+        view !== ViewState.DAILY_WORDS &&
+        view !== ViewState.TECH_WORDS &&
+        view !== ViewState.GRAMMAR && (
         <header className="bg-white/85 dark:bg-slate-900/85 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800/80 sticky top-0 z-30 safe-area-inset-top transition-colors">
           <div className="max-w-7xl mx-auto px-4 sm:px-6">
             <div className="h-16 flex items-center justify-between gap-3 sm:gap-4">
@@ -779,7 +865,7 @@ const App: React.FC = () => {
                   >
                     <span>Hatalarım</span>
                     {totalMistakes > 0 && (
-                      <span className="px-1.5 py-0.2 rounded-full text-xs font-bold bg-rose-500 text-white">
+                      <span className="px-1.5 py-0.5 rounded-full text-xs font-bold bg-rose-500 text-white">
                         {totalMistakes}
                       </span>
                     )}
@@ -787,41 +873,57 @@ const App: React.FC = () => {
                 </nav>
               </div>
 
-              {/* Right: Metrics & User Profile (Ayarlar) */}
+              {/* Right: Metrics & User Profile (Ayarlar) or Duel Actions */}
               <div className="flex items-center gap-2 sm:gap-3">
-                {/* Streak Badge */}
-                <div
-                  className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-50 dark:bg-amber-950/40 border border-amber-200/70 dark:border-amber-900/40 text-amber-600 dark:text-amber-400 text-xs font-bold"
-                  title={`${streakDays} Günlük Çalışma Serisi`}
-                >
-                  <Flame size={14} className="fill-amber-400 text-amber-500" />
-                  <span>{streakDays} Gün</span>
-                </div>
+                {view === ViewState.DUEL ? (
+                  <button
+                    onClick={() => {
+                      window.dispatchEvent(new CustomEvent('wordingo-duel-exit-request'));
+                    }}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/40 dark:hover:bg-rose-900/50 border border-rose-200/80 dark:border-rose-900/60 text-rose-600 dark:text-rose-400 text-xs font-bold transition-all active:scale-95 min-h-[38px] shadow-sm"
+                    title="Düelloyu Terk Et"
+                    aria-label="Düelloyu Terk Et"
+                  >
+                    <LogOut size={14} />
+                    <span>Terk Et</span>
+                  </button>
+                ) : (
+                  <>
+                    {/* Streak Badge (Mobile'da projenin tamamında kaldırıldı, sadece masaüstünde görünür) */}
+                    <div
+                      className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-50 dark:bg-amber-950/40 border border-amber-200/70 dark:border-amber-900/40 text-amber-600 dark:text-amber-400 text-xs font-bold"
+                      title={`${streakDays} Günlük Çalışma Serisi`}
+                    >
+                      <Flame size={14} className="fill-amber-400 text-amber-500" />
+                      <span>{streakDays} Gün</span>
+                    </div>
 
-                {/* Mastery Badge (Desktop) */}
-                <div
-                  className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200/70 dark:border-emerald-900/40 text-emerald-600 dark:text-emerald-400 text-xs font-bold"
-                  title="Kusursuz Tamamlanan Quiz"
-                >
-                  <Trophy size={13} />
-                  <span>{totalMastery} Quiz</span>
-                </div>
+                    {/* Mastery Badge (Desktop) */}
+                    <div
+                      className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200/70 dark:border-emerald-900/40 text-emerald-600 dark:text-emerald-400 text-xs font-bold"
+                      title="Kusursuz Tamamlanan Quiz"
+                    >
+                      <Trophy size={13} />
+                      <span>{totalMastery} Quiz</span>
+                    </div>
 
-                {/* User Avatar & Ayarlar Girişi (Sadece Masaüstünde, Mobilde Alt Bar Ayarlar Kullanılır) */}
-                <button
-                  onClick={() => setView(ViewState.SETTINGS)}
-                  className={`hidden sm:flex items-center gap-2 p-1 pl-1.5 pr-2.5 rounded-xl border text-xs font-semibold transition-all active:scale-98 ${
-                    view === ViewState.SETTINGS || view === ViewState.PROFILE
-                      ? 'bg-blue-50 dark:bg-blue-950/50 border-blue-300 dark:border-blue-800 text-blue-600 dark:text-blue-400 shadow-sm'
-                      : 'bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:border-slate-300 dark:hover:border-slate-600'
-                  }`}
-                  title="Hesap ve Uygulama Ayarları"
-                >
-                  <div className="w-6 h-6 rounded-full bg-blue-600 text-white flex items-center justify-center text-xs font-bold shrink-0">
-                    <span className="leading-none">{userInitial.toUpperCase()}</span>
-                  </div>
-                  <span className="max-w-[100px] truncate">{userEmail.split('@')[0]}</span>
-                </button>
+                    {/* User Avatar & Ayarlar Girişi (Sadece Masaüstünde, Mobilde Alt Bar Ayarlar Kullanılır) */}
+                    <button
+                      onClick={() => setView(ViewState.SETTINGS)}
+                      className={`hidden sm:flex items-center gap-2 p-1 pl-1.5 pr-2.5 rounded-xl border text-xs font-semibold transition-all active:scale-98 ${
+                        view === ViewState.SETTINGS || view === ViewState.PROFILE
+                          ? 'bg-blue-50 dark:bg-blue-950/50 border-blue-300 dark:border-blue-800 text-blue-600 dark:text-blue-400 shadow-sm'
+                          : 'bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:border-slate-300 dark:hover:border-slate-600'
+                      }`}
+                      title="Hesap ve Uygulama Ayarları"
+                    >
+                      <div className="w-6 h-6 rounded-full bg-blue-600 text-white flex items-center justify-center text-xs font-bold shrink-0">
+                        <span className="leading-none">{userInitial.toUpperCase()}</span>
+                      </div>
+                      <span className="max-w-[100px] truncate">{userEmail.split('@')[0]}</span>
+                    </button>
+                  </>
+                )}
               </div>
             </div>
           </div>
@@ -857,6 +959,64 @@ const App: React.FC = () => {
             {/* DASHBOARD VIEW (Minimalist Learning Hub) */}
             {view === ViewState.DASHBOARD && (
               <div className="max-w-4xl mx-auto px-4 sm:px-6 pt-6 pb-mobile-nav space-y-6 animate-fade-in">
+                {/* 2 Kişilik Canlı Düello Compact Top Card */}
+                <div
+                  onClick={() => setView(ViewState.DUEL)}
+                  className="bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-2xl p-2.5 sm:p-3 flex items-center justify-between gap-3 hover:border-blue-400 dark:hover:border-blue-500/60 shadow-xs hover:shadow-sm cursor-pointer transition-all active:scale-[0.99] group"
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      setView(ViewState.DUEL);
+                    }
+                  }}
+                  aria-label="2 Kişilik Canlı Kelime Düellosuna git"
+                >
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <div className="w-8 h-8 rounded-xl bg-blue-600 text-white flex items-center justify-center shrink-0 shadow-sm shadow-blue-500/20 group-hover:scale-105 transition-transform">
+                      <Swords size={16} />
+                    </div>
+                    <div className="min-w-0">
+                      <h3 className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white tracking-tight group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                        2 Kişilik Canlı Düello
+                      </h3>
+                      <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate">
+                        Arkadaşınla gerçek zamanlı çift ekran kelime yarışı
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2 shrink-0">
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 border border-blue-200/60 dark:border-blue-800/60 tracking-tight">
+                      Yeni Mod
+                    </span>
+                    <ChevronRight size={14} className="text-slate-400 group-hover:text-blue-600 dark:group-hover:text-blue-400 group-hover:translate-x-0.5 transition-all" />
+                  </div>
+                </div>
+
+                {/* Yapay Zeka Gramer Pratiği */}
+                <button
+                  type="button"
+                  onClick={() => setView(ViewState.GRAMMAR)}
+                  className="w-full text-left bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-2xl p-2.5 sm:p-3 flex items-center justify-between gap-3 hover:border-blue-400 dark:hover:border-blue-500/60 shadow-xs hover:shadow-sm cursor-pointer transition-all active:scale-[0.99] group"
+                >
+                  <span className="flex items-center gap-2.5 min-w-0">
+                    <span className="w-8 h-8 rounded-xl bg-blue-600 text-white flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+                      <PenLine size={16} />
+                    </span>
+                    <span className="min-w-0">
+                      <span className="block text-xs sm:text-sm font-bold text-slate-900 dark:text-white tracking-tight group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                        Gramer Pratiği
+                      </span>
+                      <span className="block text-[11px] text-slate-500 dark:text-slate-400 truncate">
+                        Seviyene göre yapay zeka cümlelerinde fiil boşluklarını doldur
+                      </span>
+                    </span>
+                  </span>
+                  <ChevronRight size={14} className="shrink-0 text-slate-400 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-all" />
+                </button>
+
                 {/* Minimal Header */}
                 <div className="flex items-center justify-between">
                   <div>
@@ -1046,12 +1206,12 @@ const App: React.FC = () => {
                             </div>
                           </div>
 
-                          <div className="flex items-center gap-1.5 shrink-0" onClick={(e) => e.stopPropagation()}>
+                          <div className="flex items-center gap-2 shrink-0" onClick={(e) => e.stopPropagation()}>
                             <button
                               type="button"
                               onClick={() => handleStartFlashcard(group)}
                               disabled={group.words.length < 1}
-                              className="px-2.5 py-1.5 rounded-lg text-xs font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                              className="min-h-[44px] px-3.5 py-2 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors flex items-center justify-center active:scale-95"
                               title="Pratik Yap"
                             >
                               Pratik
@@ -1060,10 +1220,10 @@ const App: React.FC = () => {
                               type="button"
                               onClick={() => handleStartQuiz(group)}
                               disabled={group.words.length < 1}
-                              className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white transition-colors flex items-center gap-1"
+                              className="min-h-[44px] px-4 py-2 rounded-xl text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white transition-all flex items-center justify-center gap-1.5 shadow-sm active:scale-95"
                               title="Quiz Başlat"
                             >
-                              <Play size={11} className="fill-current" />
+                              <Play size={12} className="fill-current" />
                               <span>Quiz</span>
                             </button>
                           </div>
@@ -1284,6 +1444,123 @@ const App: React.FC = () => {
                         <ChevronRight size={13} />
                       </div>
                     </div>
+
+                    {/* Seyahat İngilizcesi Hub Card */}
+                    <div
+                      onClick={() => setView(ViewState.TRAVEL_WORDS)}
+                      className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-4 flex items-center justify-between gap-3 hover:border-teal-400 dark:hover:border-teal-500 hover:shadow-md cursor-pointer transition-all active:scale-98 group"
+                      role="button"
+                      tabIndex={0}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault();
+                          setView(ViewState.TRAVEL_WORDS);
+                        }
+                      }}
+                      aria-label="Seyahat İngilizcesi havalimanı ve otel kelimeleri çalışmasına git"
+                    >
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div className="w-10 h-10 rounded-xl bg-teal-50 dark:bg-teal-950/60 text-teal-600 dark:text-teal-400 flex items-center justify-center shrink-0 border border-teal-200/60 dark:border-teal-800/60 group-hover:scale-105 transition-transform">
+                          <Plane size={18} />
+                        </div>
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <h4 className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white tracking-tight group-hover:text-teal-600 dark:group-hover:text-teal-400 transition-colors">
+                              Seyahat İngilizcesi
+                            </h4>
+                            <span className="px-1.5 py-0.2 rounded-full bg-teal-50 dark:bg-teal-950/50 text-teal-600 dark:text-teal-400 text-[10px] font-bold border border-teal-200/50 dark:border-teal-900/40">
+                              Gezi & Tatil
+                            </span>
+                          </div>
+                          <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 truncate">
+                            Havalimanı, otel & ulaşım
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-1 shrink-0 px-2.5 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 group-hover:bg-teal-600 group-hover:text-white text-[11px] font-semibold transition-all">
+                        <span>Çalış</span>
+                        <ChevronRight size={13} />
+                      </div>
+                    </div>
+
+                    {/* Günlük Kalıplar Hub Card */}
+                    <div
+                      onClick={() => setView(ViewState.DAILY_WORDS)}
+                      className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-4 flex items-center justify-between gap-3 hover:border-violet-400 dark:hover:border-violet-500 hover:shadow-md cursor-pointer transition-all active:scale-98 group"
+                      role="button"
+                      tabIndex={0}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault();
+                          setView(ViewState.DAILY_WORDS);
+                        }
+                      }}
+                      aria-label="Günlük konuşma ve popüler deyimler çalışmasına git"
+                    >
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div className="w-10 h-10 rounded-xl bg-violet-50 dark:bg-violet-950/60 text-violet-600 dark:text-violet-400 flex items-center justify-center shrink-0 border border-violet-200/60 dark:border-violet-800/60 group-hover:scale-105 transition-transform">
+                          <MessageCircle size={18} />
+                        </div>
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <h4 className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white tracking-tight group-hover:text-violet-600 dark:group-hover:text-violet-400 transition-colors">
+                              Günlük Kalıplar
+                            </h4>
+                            <span className="px-1.5 py-0.2 rounded-full bg-violet-50 dark:bg-violet-950/50 text-violet-600 dark:text-violet-400 text-[10px] font-bold border border-violet-200/50 dark:border-violet-900/40">
+                              Deyimler
+                            </span>
+                          </div>
+                          <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 truncate">
+                            Pratik ifadeler & popüler kalıplar
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-1 shrink-0 px-2.5 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 group-hover:bg-violet-600 group-hover:text-white text-[11px] font-semibold transition-all">
+                        <span>Çalış</span>
+                        <ChevronRight size={13} />
+                      </div>
+                    </div>
+
+                    {/* Yazılım & Teknoloji Hub Card */}
+                    <div
+                      onClick={() => setView(ViewState.TECH_WORDS)}
+                      className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-4 flex items-center justify-between gap-3 hover:border-cyan-400 dark:hover:border-cyan-500 hover:shadow-md cursor-pointer transition-all active:scale-98 group"
+                      role="button"
+                      tabIndex={0}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault();
+                          setView(ViewState.TECH_WORDS);
+                        }
+                      }}
+                      aria-label="Yazılım ve teknoloji terimleri çalışmasına git"
+                    >
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div className="w-10 h-10 rounded-xl bg-cyan-50 dark:bg-cyan-950/60 text-cyan-600 dark:text-cyan-400 flex items-center justify-center shrink-0 border border-cyan-200/60 dark:border-cyan-800/60 group-hover:scale-105 transition-transform">
+                          <Cpu size={18} />
+                        </div>
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <h4 className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white tracking-tight group-hover:text-cyan-600 dark:group-hover:text-cyan-400 transition-colors">
+                              Yazılım & Teknoloji
+                            </h4>
+                            <span className="px-1.5 py-0.2 rounded-full bg-cyan-50 dark:bg-cyan-950/50 text-cyan-600 dark:text-cyan-400 text-[10px] font-bold border border-cyan-200/50 dark:border-cyan-900/40">
+                              Tech & IT
+                            </span>
+                          </div>
+                          <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 truncate">
+                            Geliştirici, bulut & bilişim
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-1 shrink-0 px-2.5 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 group-hover:bg-cyan-600 group-hover:text-white text-[11px] font-semibold transition-all">
+                        <span>Çalış</span>
+                        <ChevronRight size={13} />
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -1358,6 +1635,55 @@ const App: React.FC = () => {
                 badgeText="Business"
                 storageKey="wordingo-learned-business"
                 words={BUSINESS_WORDS}
+                onExit={() => setView(ViewState.DASHBOARD)}
+              />
+            )}
+
+            {view === ViewState.TRAVEL_WORDS && (
+              <CuratedVocabularyPractice
+                title="Seyahat İngilizcesi"
+                subtitle="Havalimanı, Otel ve Ulaşım Kelimeleri"
+                badgeText="Travel"
+                storageKey="wordingo-learned-travel"
+                words={TRAVEL_WORDS}
+                onExit={() => setView(ViewState.DASHBOARD)}
+              />
+            )}
+
+            {view === ViewState.DAILY_WORDS && (
+              <CuratedVocabularyPractice
+                title="Günlük Kalıplar"
+                subtitle="Pratik Konuşma ve Popüler Deyimler"
+                badgeText="Daily Idioms"
+                storageKey="wordingo-learned-daily"
+                words={DAILY_WORDS}
+                onExit={() => setView(ViewState.DASHBOARD)}
+              />
+            )}
+
+            {view === ViewState.TECH_WORDS && (
+              <CuratedVocabularyPractice
+                title="Yazılım & Teknoloji"
+                subtitle="Yazılım, Bulut ve Bilişim Terimleri"
+                badgeText="Tech & IT"
+                storageKey="wordingo-learned-tech"
+                words={TECH_WORDS}
+                onExit={() => setView(ViewState.DASHBOARD)}
+              />
+            )}
+
+            {view === ViewState.GRAMMAR && (
+              <GrammarPractice
+                onExit={() => setView(ViewState.DASHBOARD)}
+                onRecordStudyTime={handleRecordStudyTime}
+              />
+            )}
+
+            {view === ViewState.DUEL && (
+              <DuelPractice
+                userGroups={groups}
+                defaultPlayerName={userEmail ? userEmail.split('@')[0] : undefined}
+                onAddMistakesToPool={handleAddDuelMistakesToPool}
                 onExit={() => setView(ViewState.DASHBOARD)}
               />
             )}
@@ -1847,7 +2173,7 @@ const App: React.FC = () => {
       </main>
 
       {/* MOBILE BOTTOM NAVIGATION BAR (Fixed at bottom on mobile, hidden on md+) */}
-      {session && (
+      {session && view !== ViewState.DUEL && view !== ViewState.GRAMMAR && (
         <nav className="md:hidden fixed bottom-0 inset-x-0 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border-t border-slate-200/80 dark:border-slate-800/80 z-40 safe-area-inset-bottom">
           <div className="grid grid-cols-5 h-16 max-w-md mx-auto items-center px-1">
             {/* Tab 1: Dashboard */}
@@ -1900,7 +2226,7 @@ const App: React.FC = () => {
               <div className="relative">
                 <XCircle size={19} className={view === ViewState.MISTAKES ? 'stroke-[2.5]' : 'stroke-2'} />
                 {totalMistakes > 0 && (
-                  <span className="absolute -top-1 -right-2 px-1.5 py-0.2 rounded-full text-[10px] font-bold bg-rose-500 text-white leading-none">
+                  <span className="absolute -top-1 -right-2 px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-rose-500 text-white leading-none">
                     {totalMistakes}
                   </span>
                 )}
