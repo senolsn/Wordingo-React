@@ -30,6 +30,7 @@ export enum ViewState {
   DAILY_WORDS = 'DAILY_WORDS',
   TECH_WORDS = 'TECH_WORDS',
   DUEL = 'DUEL',
+  GRAMMAR = 'GRAMMAR',
   MISTAKES = 'MISTAKES',
   SETTINGS = 'SETTINGS',
   PROFILE = 'SETTINGS',
@@ -123,3 +124,17 @@ export interface DuelPlayer {
   finishedTimeMs?: number;
 }
 
+
+// Gramer Pratiği (yapay zeka ile boşluk doldurma)
+export type GrammarAnswerMode = 'type' | 'choice';
+
+export interface GrammarQuestion {
+  id: string;
+  sentence: string; // Tam olarak bir adet ___ içerir
+  baseVerb: string;
+  answer: string;
+  acceptableAnswers: string[];
+  options: string[];
+  tr: string;
+  explanation: string;
+}

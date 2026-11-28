@@ -8,6 +8,7 @@ import IrregularVerbsPractice from './components/IrregularVerbsPractice';
 import PhrasalVerbsPractice from './components/PhrasalVerbsPractice';
 import { CuratedVocabularyPractice } from './components/CuratedVocabularyPractice';
 import { DuelPractice } from './components/DuelPractice';
+import GrammarPractice from './components/GrammarPractice';
 import { OXFORD_WORDS } from './data/oxfordWords';
 import { YDS_WORDS } from './data/ydsWords';
 import { BUSINESS_WORDS } from './data/businessWords';
@@ -18,6 +19,7 @@ import { Auth } from './components/Auth';
 import { supabase } from './lib/supabaseClient';
 import { TTSAccent, getStoredAccent, setStoredAccent } from './services/ttsService';
 import {
+  PenLine,
   LogOut,
   Loader2,
   Languages,
@@ -807,7 +809,8 @@ const App: React.FC = () => {
         view !== ViewState.BUSINESS_ENGLISH &&
         view !== ViewState.TRAVEL_WORDS &&
         view !== ViewState.DAILY_WORDS &&
-        view !== ViewState.TECH_WORDS && (
+        view !== ViewState.TECH_WORDS &&
+        view !== ViewState.GRAMMAR && (
         <header className="bg-white/85 dark:bg-slate-900/85 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800/80 sticky top-0 z-30 safe-area-inset-top transition-colors">
           <div className="max-w-7xl mx-auto px-4 sm:px-6">
             <div className="h-16 flex items-center justify-between gap-3 sm:gap-4">
@@ -991,6 +994,28 @@ const App: React.FC = () => {
                     <ChevronRight size={14} className="text-slate-400 group-hover:text-blue-600 dark:group-hover:text-blue-400 group-hover:translate-x-0.5 transition-all" />
                   </div>
                 </div>
+
+                {/* Yapay Zeka Gramer Pratiği */}
+                <button
+                  type="button"
+                  onClick={() => setView(ViewState.GRAMMAR)}
+                  className="w-full text-left bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-2xl p-2.5 sm:p-3 flex items-center justify-between gap-3 hover:border-blue-400 dark:hover:border-blue-500/60 shadow-xs hover:shadow-sm cursor-pointer transition-all active:scale-[0.99] group"
+                >
+                  <span className="flex items-center gap-2.5 min-w-0">
+                    <span className="w-8 h-8 rounded-xl bg-blue-600 text-white flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+                      <PenLine size={16} />
+                    </span>
+                    <span className="min-w-0">
+                      <span className="block text-xs sm:text-sm font-bold text-slate-900 dark:text-white tracking-tight group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                        Gramer Pratiği
+                      </span>
+                      <span className="block text-[11px] text-slate-500 dark:text-slate-400 truncate">
+                        Seviyene göre yapay zeka cümlelerinde fiil boşluklarını doldur
+                      </span>
+                    </span>
+                  </span>
+                  <ChevronRight size={14} className="shrink-0 text-slate-400 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-all" />
+                </button>
 
                 {/* Minimal Header */}
                 <div className="flex items-center justify-between">
@@ -1647,6 +1672,13 @@ const App: React.FC = () => {
               />
             )}
 
+            {view === ViewState.GRAMMAR && (
+              <GrammarPractice
+                onExit={() => setView(ViewState.DASHBOARD)}
+                onRecordStudyTime={handleRecordStudyTime}
+              />
+            )}
+
             {view === ViewState.DUEL && (
               <DuelPractice
                 userGroups={groups}
@@ -2141,7 +2173,7 @@ const App: React.FC = () => {
       </main>
 
       {/* MOBILE BOTTOM NAVIGATION BAR (Fixed at bottom on mobile, hidden on md+) */}
-      {session && view !== ViewState.DUEL && (
+      {session && view !== ViewState.DUEL && view !== ViewState.GRAMMAR && (
         <nav className="md:hidden fixed bottom-0 inset-x-0 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border-t border-slate-200/80 dark:border-slate-800/80 z-40 safe-area-inset-bottom">
           <div className="grid grid-cols-5 h-16 max-w-md mx-auto items-center px-1">
             {/* Tab 1: Dashboard */}
